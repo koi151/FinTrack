@@ -4,12 +4,8 @@ import com.koi151.money.fintrack.common.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
-
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -28,7 +24,7 @@ public class GlobalExceptionHandler {
             ));
     }
 
-    // Handle Validation Errors -> return Map to FE to easily create UI
+/*    // Handle Validation Errors -> return Map to FE to easily create UI
     // Todo: Simplify it
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ApiResponse<Object>> handleValidationException(MethodArgumentNotValidException ex) {
@@ -49,7 +45,7 @@ public class GlobalExceptionHandler {
         return ResponseEntity
             .status(errorCode.getHttpStatus())
             .body(response);
-    }
+    }*/
 
     // Catch all & log stack trace
     @ExceptionHandler(Exception.class)
@@ -57,9 +53,9 @@ public class GlobalExceptionHandler {
         log.error("Unexpected Error at {}: ", request.getRequestURI(), ex);
 
         return ResponseEntity
-            .status(ErrorCode.UNCATEGORIZED_EXCEPTION.getHttpStatus())
+            .status(ErrorCode.SYSTEM_ERROR.getHttpStatus())
             .body(ApiResponse.error(
-                ErrorCode.UNCATEGORIZED_EXCEPTION.getCode(),
+                ErrorCode.SYSTEM_ERROR.getCode(),
                 "Internal server error. Please contact admin."
             ));
     }

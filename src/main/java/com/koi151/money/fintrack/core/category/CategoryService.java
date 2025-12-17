@@ -16,8 +16,12 @@ public class CategoryService {
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
         if (categoryRepository.existsByNameAndUserId(request.name(), request.userId())) {
-            throw new AppException(ErrorCode.CATEGORY_EXISTED);
+            throw new AppException(
+                ErrorCode.CATEGORY_EXISTED,
+                String.format("Category already exists with name: %s", request.name())
+            );
         }
+        // Todo: check user
 
         Category category = categoryMapper.toEntity(request);
         categoryRepository.save(category);

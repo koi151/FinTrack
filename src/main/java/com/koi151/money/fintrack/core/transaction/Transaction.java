@@ -28,7 +28,7 @@ public class Transaction {
     private UUID userId; // temporary hard code during development process
 
     @Column(nullable = false)
-    private Instant dateTime;
+    private Instant transactionDate;
 
     @Column(nullable = false, precision = 19, scale = 4)
     private BigDecimal amount;

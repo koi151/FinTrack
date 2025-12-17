@@ -23,8 +23,18 @@ public class ApiResponse<T> {
     // Factory method for Success
     public static <T> ApiResponse<T> success(T result) {
         return ApiResponse.<T>builder()
-            .code(1000)
+            .code(200)
             .message("Success")
+            .result(result)
+            .timestamp(Instant.now())
+            .build();
+    }
+
+    // Factory method for Error
+    public static <T> ApiResponse<T> success(T result, String message) {
+        return ApiResponse.<T>builder()
+            .code(200)
+            .message(message)
             .result(result)
             .timestamp(Instant.now())
             .build();

@@ -17,6 +17,6 @@ public class CategoryController {
 
     @PostMapping
     public ApiResponse<CategoryResponse> createCategory(@RequestBody @Valid CategoryRequest request) {
-        return ApiResponse.success(categoryService.createCategory(request));
+        return ApiResponse.success(categoryService.createCategory(request), "Successfully created category");
     }
 }

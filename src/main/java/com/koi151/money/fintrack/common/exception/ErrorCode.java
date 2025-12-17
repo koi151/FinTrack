@@ -9,15 +9,16 @@ import org.springframework.http.HttpStatus;
 public enum ErrorCode {
 
     /** General Errors -------------------------------------------- */
-    UNCATEGORIZED_EXCEPTION(1001, "Uncategorized error", HttpStatus.INTERNAL_SERVER_ERROR),
-
-    // Specifically for Form Validation (@NotNull, @Size, @Email)
-    INVALID_PARAMETERS(1003, "Invalid input parameters", HttpStatus.BAD_REQUEST),
-
-    RESOURCE_NOT_FOUND(1004, "Resource not found",HttpStatus.NOT_FOUND),
+    RESOURCE_NOT_FOUND(1001, "Resource not found",HttpStatus.NOT_FOUND),
+    INVALID_PARAM(1003, "Invalid input parameters", HttpStatus.BAD_REQUEST),
+    SYSTEM_ERROR(1005, "Uncategorized system error", HttpStatus.INTERNAL_SERVER_ERROR),
 
     /** 2xxx: Category Module -------------------------------------- */
-    CATEGORY_EXISTED(2001, "Category already exists", HttpStatus.CONFLICT);
+    CATEGORY_NOT_FOUND(2001, "Category not found", HttpStatus.NOT_FOUND),
+    CATEGORY_EXISTED(2002, "Category already exists", HttpStatus.CONFLICT),
+
+    /** 3xxx: Transaction Module -------------------------------------- */
+    TRANSACTION_EXISTED(3002, "Transaction already exists", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

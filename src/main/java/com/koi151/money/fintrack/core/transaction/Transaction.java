@@ -1,21 +1,26 @@
 package com.koi151.money.fintrack.core.transaction;
 
+import com.koi151.money.fintrack.common.domain.BaseEntity;
 import com.koi151.money.fintrack.core.category.Category;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
+import lombok.Setter;
+import org.hibernate.annotations.SoftDelete;
 
 import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "transaction")
-@Data
+@Table(name = "transactions")
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Transaction {
+@SoftDelete(columnName = "is_deleted")
+public class Transaction extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)

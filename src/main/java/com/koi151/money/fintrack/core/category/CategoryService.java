@@ -2,9 +2,11 @@ package com.koi151.money.fintrack.core.category;
 
 import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
-import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -26,5 +28,13 @@ public class CategoryService {
         Category category = categoryMapper.toEntity(request);
         categoryRepository.save(category);
         return categoryMapper.toResponse(category);
+    }
+
+    @Transactional(readOnly = true)
+    public CategoryResponse getCategory(UUID id) {
+        // Todo extract and filter by user ID too
+        return categoryRepository.findById(id)
+            .map(categoryMapper::toResponse)
+            .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
     }
 }

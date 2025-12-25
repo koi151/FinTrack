@@ -1,23 +1,25 @@
 package com.koi151.money.fintrack.core.category;
 
+import com.koi151.money.fintrack.common.domain.BaseEntity;
 import com.koi151.money.fintrack.core.transaction.TransactionType;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Pattern;
 import lombok.AllArgsConstructor;
-import lombok.Data;
+import lombok.Getter;
 import lombok.NoArgsConstructor;
-import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.UpdateTimestamp;
+import lombok.Setter;
+import org.hibernate.annotations.SoftDelete;
 
-import java.time.Instant;
 import java.util.UUID;
 
 @Entity
 @Table(name = "categories")
-@Data
+@Getter
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
-public class Category {
+@SoftDelete(columnName = "is_deleted")
+public class Category extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -26,7 +28,7 @@ public class Category {
     @Column(nullable = false)
     private UUID userId;
 
-    @Column(nullable = false, length = 100, unique = true)
+    @Column(nullable = false, length = 100) // unique ensured by partial index
     private String name;
 
     @Enumerated(EnumType.STRING)
@@ -38,11 +40,4 @@ public class Category {
 
     @Pattern(regexp = "^#([A-Fa-f0-9]{6})$", message = "Invalid color code")
     private String colorCode;
-
-    @CreationTimestamp
-    @Column(updatable = false, nullable = false)
-    private Instant createdAt;
-
-    @UpdateTimestamp
-    private Instant updatedAt;
 }

@@ -16,27 +16,31 @@ public class ApiResponse<T> {
     @Builder.Default
     private int code = 1000; // Default success code
 
+    @Builder.Default
+    private Instant timestamp = Instant.now();
+
     private String message;
-    private Instant timestamp;
     private T result;
 
     // Factory method for Success
     public static <T> ApiResponse<T> success(T result) {
         return ApiResponse.<T>builder()
-            .code(200)
             .message("Success")
             .result(result)
-            .timestamp(Instant.now())
             .build();
     }
 
     // Factory method for Error
     public static <T> ApiResponse<T> success(T result, String message) {
         return ApiResponse.<T>builder()
-            .code(200)
             .message(message)
             .result(result)
-            .timestamp(Instant.now())
+            .build();
+    }
+
+    public static <T> ApiResponse<T> success(int code, String message) {
+        return ApiResponse.<T>builder()
+            .message(message)
             .build();
     }
 
@@ -45,7 +49,6 @@ public class ApiResponse<T> {
         return ApiResponse.<T>builder()
             .code(code)
             .message(message)
-            .timestamp(Instant.now())
             .build();
     }
 }

@@ -23,4 +23,10 @@ public class CategoryController {
     public ApiResponse<CategoryResponse> getCategory(@PathVariable UUID id) {
         return ApiResponse.success(categoryService.getCategory(id), "Successfully get category");
     }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<CategoryResponse> deleteCategory(@PathVariable UUID id) {
+        categoryService.deleteCategory(id);
+        return ApiResponse.success(204, "Successfully deleted category");
+    }
 }

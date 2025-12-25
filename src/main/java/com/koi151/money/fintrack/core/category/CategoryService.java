@@ -17,7 +17,7 @@ public class CategoryService {
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
-        if (categoryRepository.existsByNameAndUserId(request.name(), request.userId())) {
+        if (categoryRepository.existsByName(request.name())) {
             throw new AppException(
                 ErrorCode.CATEGORY_EXISTED,
                 String.format("Category already exists with name: %s", request.name())
@@ -36,5 +36,14 @@ public class CategoryService {
         return categoryRepository.findById(id)
             .map(categoryMapper::toResponse)
             .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+    }
+
+    @Transactional
+    public void deleteCategory(UUID id) {
+        Category category = categoryRepository.findById(id)
+            .orElseThrow(() -> new AppException(
+                ErrorCode.CATEGORY_NOT_FOUND,
+                String.format("Category not found with id: %s", id)));
+        categoryRepository.delete(category);
     }
 }

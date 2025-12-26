@@ -5,10 +5,9 @@ import com.koi151.money.fintrack.core.transaction.payload.TransactionRequest;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/v1/transactions")
@@ -20,5 +19,11 @@ public class TransactionController {
     @PostMapping
     public ApiResponse<TransactionResponse> createTransaction(@RequestBody @Valid TransactionRequest request) {
         return ApiResponse.success(transactionService.createTransaction(request));
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResponse<TransactionResponse> deleteTransaction(@PathVariable UUID id) {
+        transactionService.deleteTransaction(id);
+        return ApiResponse.success(204, "Successfully deleted transaction");
     }
 }

@@ -18,6 +18,7 @@ public enum ErrorCode {
     CATEGORY_EXISTED(2002, "Category already exists", HttpStatus.CONFLICT),
 
     /** 3xxx: Transaction Module -------------------------------------- */
+    TRANSACTION_NOT_FOUND(2001, "Transaction not found", HttpStatus.NOT_FOUND),
     TRANSACTION_EXISTED(3002, "Transaction already exists", HttpStatus.CONFLICT);
 
     private final int code;

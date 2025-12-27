@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.UUID;
 
 @Slf4j
@@ -25,6 +26,8 @@ public class TransactionService {
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[CREATE_TRANSACTION] Start - categoryId: {}, userId: {}, amount: {}",
                 request.getCategoryId(), request.getUserId(), request.getAmount());
+
+        validateRequest(request);
 
         Transaction savedTransaction = transactionRepository.save(
             transactionMapper.toEntity(request)
@@ -42,5 +45,15 @@ public class TransactionService {
                 String.format("Transaction not found with id: %s", id))
             );
         transactionRepository.delete(transaction);
+    }
+
+    // helpers
+    private void validateRequest(TransactionRequest request) {
+        if (request.getAmount() == null) {
+            throw new AppException(ErrorCode.INVALID_PARAM, "Amount cannot be null");
+        }
+        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new AppException(ErrorCode.INVALID_PARAM, "Amount must be positive value");
+        }
     }
 }

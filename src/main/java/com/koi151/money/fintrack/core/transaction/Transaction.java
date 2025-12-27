@@ -3,10 +3,7 @@ package com.koi151.money.fintrack.core.transaction;
 import com.koi151.money.fintrack.common.domain.BaseEntity;
 import com.koi151.money.fintrack.core.category.Category;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 import org.hibernate.annotations.SoftDelete;
 
 import java.math.BigDecimal;
@@ -19,6 +16,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@Builder
 @SoftDelete(columnName = "is_deleted")
 public class Transaction extends BaseEntity {
 

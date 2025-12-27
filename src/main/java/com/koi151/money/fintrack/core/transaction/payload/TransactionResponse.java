@@ -3,6 +3,7 @@ package com.koi151.money.fintrack.core.transaction.payload;
 import lombok.Builder;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.Instant;
 import java.util.UUID;
 
@@ -12,7 +13,7 @@ public class TransactionResponse {
 
     private UUID id;
 
-    private Double amount;
+    private BigDecimal amount;
 
     private String note;
 

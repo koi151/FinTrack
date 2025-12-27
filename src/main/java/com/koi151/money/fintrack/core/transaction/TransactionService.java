@@ -25,7 +25,7 @@ public class TransactionService {
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[CREATE_TRANSACTION] Start - categoryId: {}, userId: {}, amount: {}",
-                request.getCategoryId(), request.getUserId(), request.getAmount());
+                request.categoryId(), request.userId(), request.amount());
 
         validateRequest(request);
 
@@ -49,10 +49,10 @@ public class TransactionService {
 
     // helpers
     private void validateRequest(TransactionRequest request) {
-        if (request.getAmount() == null) {
+        if (request.amount() == null) {
             throw new AppException(ErrorCode.INVALID_PARAM, "Amount cannot be null");
         }
-        if (request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+        if (request.amount().compareTo(BigDecimal.ZERO) <= 0) {
             throw new AppException(ErrorCode.INVALID_PARAM, "Amount must be positive value");
         }
     }

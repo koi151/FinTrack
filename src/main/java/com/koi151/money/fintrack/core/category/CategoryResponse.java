@@ -2,11 +2,13 @@ package com.koi151.money.fintrack.core.category;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.koi151.money.fintrack.core.transaction.TransactionType;
+import lombok.Builder;
 
 import java.time.Instant;
 import java.util.UUID;
 
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@Builder
 public record CategoryResponse(
 
     UUID id,

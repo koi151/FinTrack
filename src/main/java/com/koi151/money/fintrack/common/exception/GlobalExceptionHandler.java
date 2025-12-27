@@ -4,8 +4,13 @@ import com.koi151.money.fintrack.common.ApiResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import java.util.HashMap;
+import java.util.Map;
 
 @Slf4j
 @RestControllerAdvice
@@ -24,28 +29,32 @@ public class GlobalExceptionHandler {
             ));
     }
 
-/*    // Handle Validation Errors -> return Map to FE to easily create UI
-    // Todo: Simplify it
+    // Handle Validation Errors (@Valid failure) -> Return Map for FE
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Object>> handleValidationException(MethodArgumentNotValidException ex) {
-        // Create the detailed map of errors
+    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
+        log.warn("Validation Error: {}", ex.getMessage());
+
+        // Collect errors into a Map (Field -> Message)
         Map<String, String> errors = new HashMap<>();
-        ex.getBindingResult().getFieldErrors().forEach(error ->
-                errors.put(error.getField(), error.getDefaultMessage())
-        );
 
-        // Use the specific ErrorCode for validation
-        ErrorCode errorCode = ErrorCode.INVALID_PARAMETERS;
-        ApiResponse<Object> response = ApiResponse.error(
-            errorCode.getCode(),
-            errorCode.getMessage()
-        );
-        response.setResult(errors);
+        ex.getBindingResult().getAllErrors().forEach(error -> {
+            String fieldName = ((FieldError) error).getField();
+            String errorMessage = error.getDefaultMessage();
+            errors.put(fieldName, errorMessage);
+        });
 
+        ErrorCode errorCode = ErrorCode.INVALID_PARAM; // 1003
+
+        // Return ApiResponse with the Map in 'result' field
         return ResponseEntity
             .status(errorCode.getHttpStatus())
-            .body(response);
-    }*/
+            .body(ApiResponse.<Map<String, String>>builder()
+                .code(errorCode.getCode())
+                .message(errorCode.getMessage())
+                .result(errors)
+                .build());
+    }
+
 
     // Catch all & log stack trace
     @ExceptionHandler(Exception.class)

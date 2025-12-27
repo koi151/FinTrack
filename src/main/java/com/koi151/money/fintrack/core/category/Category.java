@@ -8,6 +8,7 @@ import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SoftDelete;
 
 import java.util.UUID;
@@ -18,6 +19,7 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
+@SuperBuilder
 @SoftDelete(columnName = "is_deleted")
 public class Category extends BaseEntity {
 

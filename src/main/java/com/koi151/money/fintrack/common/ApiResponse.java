@@ -13,8 +13,10 @@ import java.time.Instant;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class ApiResponse<T> {
 
+    public static final int SUCCESS_CODE = 1000;
+
     @Builder.Default
-    private int code = 1000; // Default success code
+    private int code = SUCCESS_CODE;
 
     @Builder.Default
     private Instant timestamp = Instant.now();
@@ -40,6 +42,7 @@ public class ApiResponse<T> {
 
     public static <T> ApiResponse<T> success(int code, String message) {
         return ApiResponse.<T>builder()
+            .code(code)
             .message(message)
             .build();
     }

@@ -12,21 +12,21 @@ import org.springframework.beans.factory.annotation.Autowired;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public abstract class TransactionMapper {
 
-    @Autowired
+    @Autowired // no constructor injection to prevent conflict with mapstruct
     protected CategoryRepository categoryRepository;
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category", ignore = true) // ignore for @AfterMapping handling it
-    @Mapping(target = "transactionDate", expression = "java(request.getDateTime() != null ? request.getDateTime() : java.time.Instant.now())")
+    @Mapping(target = "transactionDate", expression = "java(request.dateTime() != null ? request.dateTime() : java.time.Instant.now())")
     public abstract Transaction toEntity(TransactionRequest request);
 
     @AfterMapping
     protected void enrichEntity(TransactionRequest request, @MappingTarget Transaction transaction) {
-        if (request.getCategoryId() != null) {
-            Category category = categoryRepository.findById(request.getCategoryId())
+        if (request.categoryId() != null) {
+            Category category = categoryRepository.findById(request.categoryId())
                 .orElseThrow(() -> new AppException(
                     ErrorCode.CATEGORY_NOT_FOUND,
-                    "Category not found with id: " + request.getCategoryId()
+                    "Category not found with id: " + request.categoryId()
                 ));
             transaction.setCategory(category);
         }

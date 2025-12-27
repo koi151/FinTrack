@@ -25,9 +25,11 @@ public class CategoryService {
         }
         // Todo: check user
 
-        Category category = categoryMapper.toEntity(request);
-        categoryRepository.save(category);
-        return categoryMapper.toResponse(category);
+        Category savedCategory = categoryRepository.save(
+            categoryMapper.toEntity(request)
+        );
+
+        return categoryMapper.toResponse(savedCategory);
     }
 
     @Transactional(readOnly = true)

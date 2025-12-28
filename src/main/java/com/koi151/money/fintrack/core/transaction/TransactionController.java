@@ -18,7 +18,7 @@ public class TransactionController {
 
     @PostMapping
     public ApiResponse<TransactionResponse> createTransaction(@RequestBody @Valid TransactionRequest request) {
-        return ApiResponse.success(transactionService.createTransaction(request));
+        return ApiResponse.success(transactionService.createTransaction(request), "Successfully created transaction");
     }
 
     @DeleteMapping("/{id}")

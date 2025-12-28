@@ -17,7 +17,7 @@ public abstract class TransactionMapper {
 
     @Mapping(target = "id", ignore = true)
     @Mapping(target = "category", ignore = true) // ignore for @AfterMapping handling it
-    @Mapping(target = "transactionDate", expression = "java(request.dateTime() != null ? request.dateTime() : java.time.Instant.now())")
+    @Mapping(target = "transactionDate", expression = "java(request.transactionDate() != null ? request.transactionDate() : java.time.Instant.now())")
     public abstract Transaction toEntity(TransactionRequest request);
 
     @AfterMapping

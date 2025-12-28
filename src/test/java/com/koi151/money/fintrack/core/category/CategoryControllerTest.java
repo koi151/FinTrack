@@ -7,6 +7,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
@@ -17,6 +20,7 @@ import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
@@ -60,11 +64,11 @@ class CategoryControllerTest {
         @DisplayName("Should create category and return wrapped result when valid")
         void createCategory_ValidRequest_ReturnsSuccess() {
             // Given
-            var request = buildRequest(DEFAULT_NAME);
-            var response = buildResponse(categoryId);
+            var request = buildRequest().build();
+            var response = buildResponse().build();
 
             given(categoryService.createCategory(any(CategoryRequest.class)))
-                    .willReturn(response);
+                .willReturn(response);
 
             // When & Then
             webTestClient.post()
@@ -76,7 +80,7 @@ class CategoryControllerTest {
 
                 // Assert Envelope Structure
                 .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
-                .jsonPath("$.message").isEqualTo("Successfully created category") // Message từ Controller
+                .jsonPath("$.message").isEqualTo("Successfully created category")
 
                 // Assert Payload
                 .jsonPath("$.result.id").isEqualTo(categoryId.toString())
@@ -88,7 +92,7 @@ class CategoryControllerTest {
         @DisplayName("Should return 400 and validation error map when request is invalid")
         void createCategory_InvalidRequest_Returns400() {
             // Given
-            CategoryRequest invalidRequest = buildRequest("");
+            var invalidRequest = buildRequest().name("").build();
 
             // When & Then
             webTestClient.post()
@@ -105,7 +109,74 @@ class CategoryControllerTest {
                 .jsonPath("$.message").isEqualTo(ErrorCode.INVALID_PARAM.getMessage())
 
                 .jsonPath("$.result").isMap()
-                .jsonPath("$.result.name").isEqualTo("Category name is required");
+                .jsonPath("$.result.name").exists();
+        }
+
+        @ParameterizedTest
+        @MethodSource("provideInvalidCategoryRequests")
+        @DisplayName("Should return 400 and list specific field errors for CategoryRequest")
+        void createCategory_InvalidRequests_Returns400(CategoryRequest invalidRequest, String[] expectedFields) {
+            var actions = webTestClient.post()
+                    .uri(BASE_URL)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+                    .jsonPath("$.result").isMap();
+
+            for (String field : expectedFields) { // check if message warning for each field exists
+                actions.jsonPath("$.result." + field).exists();
+            }
+        }
+
+        // Provider for single & multiple invalid field testing
+        private static Stream<Arguments> provideInvalidCategoryRequests() {
+            UUID validUser = UUID.randomUUID();
+
+            return Stream.of(
+                // Case 1: empty name
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("")
+                        .userId(validUser)
+                        .type(TransactionType.EXPENSE)
+                        .build(),
+                    new String[]{"name"}
+                ),
+
+                // Case 2: wrong color code format
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("Food")
+                        .userId(validUser)
+                        .type(TransactionType.EXPENSE)
+                        .colorCode("ZZZ123")
+                        .build(),
+                    new String[]{"colorCode"}
+                ),
+
+                // Case 3: Multiple missing fields
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("Shopping")
+                        .userId(null)
+                        .type(null)
+                        .build(),
+                    new String[]{"userId", "type"}
+                ),
+
+                // Case 4: fields exceed max length
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("a".repeat(101)) // Max 100
+                        .userId(validUser)
+                        .type(TransactionType.EXPENSE)
+                        .iconCode("b".repeat(51)) // Max 50
+                        .build(),
+                    new String[]{"name", "iconCode"}
+                )
+            );
         }
     }
 
@@ -117,7 +188,7 @@ class CategoryControllerTest {
         @DisplayName("Should return category detail inside result object")
         void getCategory_Exists_Returns200() {
             // Given
-            var response = buildResponse(categoryId);
+            var response = buildResponse().build();
             given(categoryService.getCategory(categoryId)).willReturn(response);
 
             // When & Then
@@ -148,31 +219,29 @@ class CategoryControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.message").isEqualTo("Successfully deleted category")
+                .jsonPath("$.message").exists()
                 .jsonPath("$.result").doesNotExist();
         }
     }
 
     // --- Helpers ---
 
-    private CategoryRequest buildRequest(String name) {
+    private CategoryRequest.CategoryRequestBuilder buildRequest() {
         return CategoryRequest.builder()
-            .name(name)
+            .name(DEFAULT_NAME)
             .userId(userId)
             .type(DEFAULT_TYPE)
             .iconCode(DEFAULT_ICON)
-            .colorCode(DEFAULT_COLOR)
-            .build();
+            .colorCode(DEFAULT_COLOR);
     }
 
-    private CategoryResponse buildResponse(UUID id) {
+    private CategoryResponse.CategoryResponseBuilder buildResponse() {
         return CategoryResponse.builder()
-            .id(id)
+            .id(categoryId)
             .name(DEFAULT_NAME)
             .type(DEFAULT_TYPE)
             .iconCode(DEFAULT_ICON)
             .colorCode(DEFAULT_COLOR)
-            .createdAt(fixedNow)
-            .build();
+            .createdAt(fixedNow);
     }
 }

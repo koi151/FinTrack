@@ -32,7 +32,6 @@ public class ApiResponse<T> {
             .build();
     }
 
-    // Factory method for Error
     public static <T> ApiResponse<T> success(T result, String message) {
         return ApiResponse.<T>builder()
             .message(message)

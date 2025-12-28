@@ -22,4 +22,6 @@ public class TransactionResponse {
     private String categoryName;
 
     private UUID categoryId;
+
+    private UUID userId;
 }

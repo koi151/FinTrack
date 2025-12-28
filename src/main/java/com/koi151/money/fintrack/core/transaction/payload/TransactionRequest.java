@@ -23,5 +23,5 @@ public record TransactionRequest (
 
     String note,
 
-    Instant dateTime
+    Instant transactionDate
 ) {}

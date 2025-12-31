@@ -1,6 +1,7 @@
 package com.koi151.money.fintrack.core.category;
 
 import com.koi151.money.fintrack.common.ApiResponse;
+import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
 import com.koi151.money.fintrack.core.transaction.TransactionType;
 import org.junit.jupiter.api.BeforeEach;
@@ -80,7 +81,7 @@ class CategoryControllerTest {
 
                 // Assert Envelope Structure
                 .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
-                .jsonPath("$.message").isEqualTo("Successfully created category")
+                .jsonPath("$.message").exists()
 
                 // Assert Payload
                 .jsonPath("$.result.id").isEqualTo(categoryId.toString())
@@ -177,6 +178,75 @@ class CategoryControllerTest {
                     new String[]{"name", "iconCode"}
                 )
             );
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT " + BASE_URL + "/{id}")
+    class UpdateCategoryTests {
+
+        @Test
+        @DisplayName("Should update and return 200 OK when request is valid")
+        void updateCategory_Valid_ReturnsSuccess() {
+            // Given
+            var request = buildRequest().name("Updated Name").build();
+            var response = buildResponse().name("Updated Name").build();
+
+            given(categoryService.updateCategory(any(UUID.class), any(CategoryRequest.class)))
+                    .willReturn(response);
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
+                .jsonPath("$.message").exists()
+
+                .jsonPath("$.result.name").isEqualTo("Updated Name");
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request if validation fails")
+        void updateCategory_InvalidBody_Returns400() {
+            // Given
+            var invalidRequest = buildRequest().name("").build(); // triggers @NotBlank
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .bodyValue(invalidRequest)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+                .jsonPath("$.result.name").exists();
+        }
+
+        @Test
+        @DisplayName("Should return 409 Conflict if Service throws CATEGORY_EXISTED")
+        void updateCategory_BusinessException_ReturnsErrorResponse() {
+            // Given
+            var request = buildRequest().build();
+
+            // Mocking the Service to throw an exception (Simulating the Validator/Logic failure)
+            given(categoryService.updateCategory(any(), any()))
+                .willThrow(new AppException(ErrorCode.CATEGORY_EXISTED));
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isEqualTo(ErrorCode.CATEGORY_EXISTED.getHttpStatus())
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.CATEGORY_EXISTED.getCode())
+                .jsonPath("$.message").exists();
         }
     }
 

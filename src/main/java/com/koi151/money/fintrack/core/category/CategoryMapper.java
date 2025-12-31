@@ -1,8 +1,6 @@
 package com.koi151.money.fintrack.core.category;
 
-import org.mapstruct.Mapper;
-import org.mapstruct.Mapping;
-import org.mapstruct.ReportingPolicy;
+import org.mapstruct.*;
 
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface CategoryMapper {
@@ -13,4 +11,9 @@ public interface CategoryMapper {
     Category toEntity(CategoryRequest request);
 
     CategoryResponse toResponse(Category category);
+
+    // Feature: Update entity from request
+    // partial update (if field null then keep the old value)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    void updateEntity(@MappingTarget Category category, CategoryRequest request);
 }

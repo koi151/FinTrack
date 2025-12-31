@@ -31,6 +31,9 @@ class CategoryServiceTest {
     @Mock
     private CategoryMapper categoryMapper;
 
+    @Mock
+    private CategoryValidator categoryValidator;
+
     @InjectMocks
     private CategoryService categoryService;
 
@@ -50,7 +53,7 @@ class CategoryServiceTest {
     }
 
     @Nested
-    @DisplayName("Tests for createCategory Logic")
+    @DisplayName("Tests for createCategory")
     class CreateCategoryTests {
 
         @Test
@@ -148,6 +151,112 @@ class CategoryServiceTest {
             verify(categoryRepository, never()).delete(any());
         }
     }
+
+    @Nested
+    @DisplayName("Tests for updateCategory")
+    class UpdateCategoryTests {
+
+        @Test
+        @DisplayName("Should update successfully when category exists and name is unique")
+        void updateCategory_ValidRequest_Success() {
+            // Given
+            UUID id = UUID.randomUUID();
+            CategoryRequest request = buildRequest().name("New Unique Name").build(); // User wants to change name
+
+            Category existingEntity = buildEntity().id(id).name("Old Name").build();
+            Category updatedEntity = buildEntity().id(id).name("New Unique Name").build();
+            CategoryResponse expectedResponse = buildResponse().id(id).name("New Unique Name").build();
+
+            // 1. Found existing
+            given(categoryRepository.findById(id)).willReturn(Optional.of(existingEntity));
+
+            // 2. Name changed, so check DB for duplicates (excluding current ID) -> Returns false (Unique)
+            given(categoryRepository.existsByNameAndIdNot(request.name(), id)).willReturn(false);
+
+            // 3. Save returns the updated entity
+            given(categoryRepository.save(existingEntity)).willReturn(updatedEntity);
+            given(categoryMapper.toResponse(updatedEntity)).willReturn(expectedResponse);
+
+            // When
+            CategoryResponse result = categoryService.updateCategory(id, request);
+
+            // Then
+            assertThat(result).isNotNull();
+            assertThat(result.name()).isEqualTo("New Unique Name");
+
+            // Verify mapper was called to update state
+            verify(categoryMapper).updateEntity(existingEntity, request);
+            verify(categoryRepository).save(existingEntity);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when updating non existent category")
+        void updateCategory_NotFound_ThrowsException() {
+            // Given
+            UUID id = UUID.randomUUID();
+            CategoryRequest request = buildRequest().build();
+
+            given(categoryRepository.findById(id))
+                .willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> categoryService.updateCategory(id, request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CATEGORY_NOT_FOUND);
+
+            verify(categoryRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should throw exception when new name conflicts with another category")
+        void updateCategory_DuplicateName_ThrowsException() {
+            // Given --------------------
+            UUID id = UUID.randomUUID();
+            CategoryRequest request = buildRequest().name("Duplicate Name").build();
+
+            Category existingEntity = buildEntity().id(id).name("Original Name").build();
+
+            given(categoryRepository.findById(id)).willReturn(Optional.of(existingEntity));
+
+            // Simulating conflict: Name IS found on a DIFFERENT ID
+            doThrow(new AppException(ErrorCode.CATEGORY_EXISTED, "Category name already exists"))
+                .when(categoryValidator).validateForUpdate(existingEntity, request);
+
+            // When & Then --------------------
+            assertThatThrownBy(() -> categoryService.updateCategory(id, request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CATEGORY_EXISTED);
+
+            verify(categoryRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should skip duplicate check if name remains unchanged")
+        void updateCategory_SameName_SkipsCheckAndSaves() {
+            // Given
+            UUID id = UUID.randomUUID();
+            String currentName = "Same Name";
+
+            // Request has same name but other fields may differ
+            CategoryRequest request = buildRequest().name(currentName).colorCode("#000000").build();
+            Category existingEntity = buildEntity().id(id).name(currentName).build();
+
+            given(categoryRepository.findById(id)).willReturn(Optional.of(existingEntity));
+
+            // Mocking successful save
+            given(categoryRepository.save(existingEntity)).willReturn(existingEntity);
+            given(categoryMapper.toResponse(existingEntity)).willReturn(buildResponse().build());
+
+            // When & Then
+            categoryService.updateCategory(id, request);
+
+            // Verify: NEVER checked for duplicates (because name didn't change)
+            verify(categoryRepository, never()).existsByNameAndIdNot(anyString(), any());
+            verify(categoryRepository).save(existingEntity);
+        }
+    }
+
+
 
     // HELPERS ---------------------------------------------------------
     /**

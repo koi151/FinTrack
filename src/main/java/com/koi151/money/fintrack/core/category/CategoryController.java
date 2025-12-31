@@ -19,6 +19,11 @@ public class CategoryController {
         return ApiResponse.success(categoryService.createCategory(request), "Successfully created category");
     }
 
+    @PutMapping("/{id}")
+    public ApiResponse<CategoryResponse> updateCategory(@PathVariable UUID id, @RequestBody @Valid CategoryRequest request) {
+        return ApiResponse.success(categoryService.updateCategory(id, request), "Successfully updated category");
+    }
+
     @GetMapping("/{id}")
     public ApiResponse<CategoryResponse> getCategory(@PathVariable UUID id) {
         return ApiResponse.success(categoryService.getCategory(id), "Successfully get category");

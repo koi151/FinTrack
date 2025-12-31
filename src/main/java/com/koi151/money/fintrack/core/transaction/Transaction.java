@@ -38,4 +38,15 @@ public class Transaction extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String note;
+
+    public void changeCategory(Category newCategory) {
+        if (newCategory == null) {
+            throw new IllegalArgumentException("Category cannot be null");
+        }
+        // only update if the category is different from the current one
+        if (this.category == null || !this.category.getId().equals(newCategory.getId())) {
+            this.category = newCategory;
+        }
+    }
 }
+

@@ -20,6 +20,12 @@ public abstract class TransactionMapper {
     @Mapping(target = "transactionDate", expression = "java(request.transactionDate() != null ? request.transactionDate() : java.time.Instant.now())")
     public abstract Transaction toEntity(TransactionRequest request);
 
+    // Ignore category, set manually in service to prevent MapStruct auto initialize new empty Category
+    @Mapping(target = "category", ignore = true)
+    @Mapping(target = "id", ignore = true)
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    public abstract void updateEntity(@MappingTarget Transaction transaction, TransactionRequest request);
+
     @AfterMapping
     protected void enrichEntity(TransactionRequest request, @MappingTarget Transaction transaction) {
         if (request.categoryId() != null) {

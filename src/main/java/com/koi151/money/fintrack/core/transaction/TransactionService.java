@@ -2,6 +2,7 @@ package com.koi151.money.fintrack.core.transaction;
 
 import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
+import com.koi151.money.fintrack.core.category.Category;
 import com.koi151.money.fintrack.core.category.CategoryRepository;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionRequest;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionResponse;
@@ -10,7 +11,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
 import java.util.UUID;
 
 @Slf4j
@@ -21,13 +21,14 @@ public class TransactionService {
     private final TransactionRepository transactionRepository;
     private final CategoryRepository categoryRepository;
     private final TransactionMapper transactionMapper;
+    private final TransactionValidator transactionValidator;
 
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[CREATE_TRANSACTION] Start - categoryId: {}, userId: {}, amount: {}",
                 request.categoryId(), request.userId(), request.amount());
 
-        validateRequest(request);
+        transactionValidator.validateForCreate(request);
 
         Transaction savedTransaction = transactionRepository.save(
             transactionMapper.toEntity(request)
@@ -38,22 +39,45 @@ public class TransactionService {
     }
 
     @Transactional
-    public void deleteTransaction(UUID id) {
-        Transaction transaction = transactionRepository.findById(id)
-            .orElseThrow(() -> new AppException(
-                ErrorCode.TRANSACTION_NOT_FOUND,
-                String.format("Transaction not found with id: %s", id))
-            );
-        transactionRepository.delete(transaction);
+    public TransactionResponse updateTransaction(UUID transactionId, TransactionRequest request) {
+        log.info("[UPDATE] Start id: {}", transactionId);
+
+        Transaction existingTransaction = findTransactionOrThrow(transactionId);
+
+        transactionValidator.validateForUpdate(existingTransaction, request);
+
+        updateCategoryReference(existingTransaction, request.categoryId());
+
+        transactionMapper.updateEntity(existingTransaction, request);
+
+        return transactionMapper.toResponse(
+            transactionRepository.save(existingTransaction)
+        );
     }
 
-    // helpers
-    private void validateRequest(TransactionRequest request) {
-        if (request.amount() == null) {
-            throw new AppException(ErrorCode.INVALID_PARAM, "Amount cannot be null");
-        }
-        if (request.amount().compareTo(BigDecimal.ZERO) <= 0) {
-            throw new AppException(ErrorCode.INVALID_PARAM, "Amount must be positive value");
+    @Transactional
+    public void deleteTransaction(UUID transactionId) {
+        log.info("[DELETE_TRANSACTION] Start - id: {}", transactionId);
+        Transaction transaction = findTransactionOrThrow(transactionId);
+
+        transactionRepository.delete(transaction);
+        log.info("[DELETE_TRANSACTION] Deleted - id: {}", transactionId);
+    }
+
+    // Helper methods ---------------------
+    private Transaction findTransactionOrThrow(UUID transactionId) {
+        return transactionRepository.findById(transactionId)
+            .orElseThrow(() -> new AppException(
+                ErrorCode.TRANSACTION_NOT_FOUND,
+                String.format("Transaction not found with id: %s", transactionId)
+            ));
+    }
+
+    private void updateCategoryReference(Transaction transaction, UUID newCategoryId) {
+        if (newCategoryId != null) {
+            // Use reference (proxy) to prevent redundant 1 SELECT query
+            Category categoryProxy = categoryRepository.getReferenceById(newCategoryId);
+            transaction.changeCategory(categoryProxy);
         }
     }
 }

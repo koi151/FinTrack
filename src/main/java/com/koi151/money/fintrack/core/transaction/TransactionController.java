@@ -21,6 +21,11 @@ public class TransactionController {
         return ApiResponse.success(transactionService.createTransaction(request), "Successfully created transaction");
     }
 
+    @PutMapping("/{id}")
+    public ApiResponse<TransactionResponse> updateTransaction(@PathVariable UUID id, @RequestBody @Valid TransactionRequest request) {
+        return ApiResponse.success(transactionService.updateTransaction(id, request), "Successfully updated transaction");
+    }
+
     @DeleteMapping("/{id}")
     public ApiResponse<TransactionResponse> deleteTransaction(@PathVariable UUID id) {
         transactionService.deleteTransaction(id);

@@ -74,10 +74,17 @@ public class TransactionService {
     }
 
     private void updateCategoryReference(Transaction transaction, UUID newCategoryId) {
-        if (newCategoryId != null) {
-            // Use reference (proxy) to prevent redundant 1 SELECT query
-            Category categoryProxy = categoryRepository.getReferenceById(newCategoryId);
-            transaction.changeCategory(categoryProxy);
+        if (newCategoryId == null) { // no category update request -> skip
+            return;
         }
+
+        UUID currentCategoryId = transaction.getCategory().getId();
+        if (currentCategoryId.equals(newCategoryId)) { // no change in categoryId -> skip
+            return;
+        }
+
+        // Use reference (proxy) to prevent redundant 1 SELECT query
+        Category categoryProxy = categoryRepository.getReferenceById(newCategoryId);
+        transaction.changeCategory(categoryProxy);
     }
 }

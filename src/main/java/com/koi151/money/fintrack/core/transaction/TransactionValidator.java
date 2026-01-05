@@ -28,6 +28,7 @@ public class TransactionValidator {
         // only check DB if category ID changed
         if (!currentCategoryId.equals(newCategoryId)) {
             boolean categoryExists = categoryRepository.existsById(request.categoryId());
+
             if (!categoryExists) {
                 throw new AppException(
                     ErrorCode.CATEGORY_NOT_FOUND,

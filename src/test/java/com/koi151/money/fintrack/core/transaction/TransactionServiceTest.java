@@ -2,6 +2,8 @@ package com.koi151.money.fintrack.core.transaction;
 
 import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
+import com.koi151.money.fintrack.core.category.Category;
+import com.koi151.money.fintrack.core.category.CategoryRepository;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionRequest;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionResponse;
 import org.junit.jupiter.api.DisplayName;
@@ -30,6 +32,12 @@ class TransactionServiceTest {
 
     @Mock
     private TransactionMapper transactionMapper;
+
+    @Mock
+    private CategoryRepository categoryRepository;
+
+    @Mock
+    private TransactionValidator transactionValidator;
 
     @InjectMocks
     private TransactionService transactionService;
@@ -132,6 +140,158 @@ class TransactionServiceTest {
                 .isInstanceOf(AppException.class)
                 .hasFieldOrPropertyWithValue("errorCode", ErrorCode.INVALID_PARAM);
 
+            verify(transactionRepository, never()).save(any());
+        }
+    }
+
+    @Nested
+    @DisplayName("Tests for updateTransaction")
+    class UpdateTransactionTests {
+
+        @Test
+        @DisplayName("Should update simple fields only (category unchanged) -> Skip proxy fetch")
+        void updateTransaction_NoCategoryChange_Success() {
+            // Given ---------------
+            UUID transactionId = UUID.randomUUID();
+            UUID categoryId = UUID.randomUUID();
+
+            TransactionRequest request = TransactionRequest.builder()
+                .amount(BigDecimal.valueOf(200.0))
+                .categoryId(categoryId) // the same categoryId as existing
+                .build();
+
+            Category currentCategory = Category.builder()
+                .id(categoryId)
+                .build();
+
+            Transaction existingTransaction = Transaction.builder()
+                .id(transactionId)
+                .category(currentCategory)
+                .amount(DEFAULT_AMOUNT)
+                .build();
+
+            // updated after save
+            Transaction updatedTransaction = Transaction.builder()
+                .id(transactionId)
+                .amount(BigDecimal.valueOf(200.0))
+                .build();
+
+            TransactionResponse expectedResponse = TransactionResponse.builder()
+                .id(transactionId)
+                .amount(BigDecimal.valueOf(200.0))
+                .build();
+
+            given(transactionRepository.findById(transactionId))
+                .willReturn(Optional.of(existingTransaction));
+
+            doNothing().when(transactionValidator).validateForUpdate(existingTransaction, request);
+
+            // Mock save & response
+            given(transactionRepository.save(existingTransaction))
+                .willReturn(updatedTransaction);
+            given(transactionMapper.toResponse(updatedTransaction))
+                .willReturn(expectedResponse);
+
+            // When ----------------
+            TransactionResponse result = transactionService.updateTransaction(transactionId, request);
+
+            // Then ----------------
+            assertThat(result).isEqualTo(expectedResponse);
+
+            verify(categoryRepository, never()).getReferenceById(any());
+            verify(transactionMapper).updateEntity(existingTransaction, request);
+            verify(transactionRepository).save(existingTransaction);
+        }
+
+        @Test
+        @DisplayName("Should update relationship when Category changed -> Fetch Proxy")
+        void updateTransaction_CategoryChanged_Success() {
+            // Given --------------
+            UUID transactionId = UUID.randomUUID();
+            UUID oldCategoryId = UUID.randomUUID();
+            UUID newCategoryId = UUID.randomUUID();
+
+            TransactionRequest request = TransactionRequest.builder()
+                .categoryId(newCategoryId) // Request new categoryId
+                .amount(DEFAULT_AMOUNT)
+                .build();
+
+            Category oldCategory = Category.builder()
+                .id(oldCategoryId)
+                .build();
+
+            Transaction existingTransaction = Transaction.builder()
+                .id(transactionId)
+                .category(oldCategory)
+                .build();
+
+            Category newCategoryProxy = Category.builder()
+                .id(newCategoryId)
+                .build();
+
+            // Stubbing
+            given(transactionRepository.findById(transactionId))
+                .willReturn(Optional.of(existingTransaction));
+            doNothing().when(transactionValidator)
+                .validateForUpdate(existingTransaction, request);
+
+            // Mock the get proxy behavior
+            given(categoryRepository.getReferenceById(newCategoryId)).willReturn(newCategoryProxy);
+
+            given(transactionRepository.save(existingTransaction)).willReturn(existingTransaction);
+            given(transactionMapper.toResponse(any())).willReturn(TransactionResponse.builder().build());
+
+            // When ----------------
+            transactionService.updateTransaction(transactionId, request);
+
+            // Then ----------------
+            // Verify got Proxy and set into transaction
+            verify(categoryRepository).getReferenceById(newCategoryId);
+
+            assertThat(existingTransaction.getCategory())
+                .isEqualTo(newCategoryProxy);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when Transaction ID not found")
+        void updateTransaction_NotFound_ThrowsException() {
+            // Given
+            UUID transactionId = UUID.randomUUID();
+            TransactionRequest request = TransactionRequest.builder().build();
+
+            given(transactionRepository.findById(transactionId))
+                .willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TRANSACTION_NOT_FOUND);
+
+            verify(transactionValidator, never()).validateForUpdate(any(), any());
+            verify(transactionRepository, never()).save(any());
+        }
+
+        @Test
+        @DisplayName("Should propagate exception when Validator fails")
+        void updateTransaction_ValidationFails_ThrowsException() {
+            // Given --------------
+            UUID transactionId = UUID.randomUUID();
+            TransactionRequest request = TransactionRequest.builder().build();
+            Transaction existingTransaction = new Transaction();
+
+            given(transactionRepository.findById(transactionId))
+                .willReturn(Optional.of(existingTransaction));
+
+            // Mock Validator & thrown exception (Category not found)
+            doThrow(new AppException(ErrorCode.CATEGORY_NOT_FOUND))
+                .when(transactionValidator).validateForUpdate(existingTransaction, request);
+
+            // When & Then -------------
+            assertThatThrownBy(() -> transactionService.updateTransaction(transactionId, request))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.CATEGORY_NOT_FOUND);
+
+            verify(categoryRepository, never()).getReferenceById(any());
             verify(transactionRepository, never()).save(any());
         }
     }

@@ -1,6 +1,7 @@
 package com.koi151.money.fintrack.core.transaction;
 
 import com.koi151.money.fintrack.common.ApiResponse;
+import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionRequest;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionResponse;
@@ -25,6 +26,7 @@ import java.util.UUID;
 import java.util.stream.Stream;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.doNothing;
 
@@ -54,6 +56,7 @@ class TransactionControllerTest {
         this.userId = UUID.randomUUID();
         this.categoryId = UUID.randomUUID();
         this.transactionId = UUID.randomUUID();
+        this.transactionDate = Instant.now();
     }
 
     @Nested
@@ -125,6 +128,105 @@ class TransactionControllerTest {
                 Arguments.of(TransactionRequest.builder().build(),
                     new String[]{"amount", "categoryId", "userId"})
             );
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT " + BASE_URL + "/{id}")
+    class UpdateTransactionTests {
+
+        @Test
+        @DisplayName("Should update and return 200 OK when request is valid")
+        void updateTransaction_ValidRequest_ReturnsSuccess() {
+            // Given ------------------------
+            TransactionRequest request = buildRequest()
+                .note("Updated Note")
+                .build();
+
+            TransactionResponse response = buildResponse()
+                .note("Updated Note")
+                .build();
+
+            // mocking
+            given(transactionService.updateTransaction(eq(transactionId), any(TransactionRequest.class)))
+                .willReturn(response);
+
+            // When & Then ----------------
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
+                .jsonPath("$.message").exists()
+
+                .jsonPath("$.result.id").isEqualTo(transactionId.toString())
+                .jsonPath("$.result.amount").isEqualTo(DEFAULT_AMOUNT)
+                .jsonPath("$.result.note").isEqualTo("Updated Note");
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request if body is invalid")
+        void updateTransaction_InvalidBody_Returns400() {
+            // Given: Request with negative amount
+            TransactionRequest invalidRequest = buildRequest()
+                .amount(BigDecimal.valueOf(-100))
+                .build();
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(invalidRequest)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+                .jsonPath("$.result.amount").isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("Should return 404 when Transaction ID does not exist")
+        void updateTransaction_NotFound_ReturnsErrorResponse() {
+            // Given
+            TransactionRequest request = buildRequest().build();
+
+            given(transactionService.updateTransaction(eq(transactionId), any()))
+                .willThrow(new AppException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isEqualTo(ErrorCode.TRANSACTION_NOT_FOUND.getHttpStatus())
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.TRANSACTION_NOT_FOUND.getCode())
+                .jsonPath("$.message").isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("Should return error when Category does not exist")
+        void updateTransaction_CategoryNotFound_ReturnsErrorResponse() {
+            // Given
+            TransactionRequest request = buildRequest().build();
+
+            given(transactionService.updateTransaction(eq(transactionId), any()))
+                .willThrow(new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isEqualTo(ErrorCode.CATEGORY_NOT_FOUND.getHttpStatus())
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.CATEGORY_NOT_FOUND.getCode())
+                .jsonPath("$.message").isNotEmpty();
         }
     }
 

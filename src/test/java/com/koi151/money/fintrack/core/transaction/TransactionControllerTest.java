@@ -112,6 +112,46 @@ class TransactionControllerTest {
                 .jsonPath("$.result").isEmpty();
         }
     }
+
+    @Nested
+    @DisplayName("GET " + BASE_URL + "/{id}")
+    class GetTransactionDetailTests {
+
+        @Test
+        @DisplayName("Should return 200 OK and detail when ID exists")
+        void getTransaction_IdExists_ReturnsSuccess() {
+            var response = buildResponse().id(transactionId).build();
+            given(transactionService.getTransaction(transactionId)).willReturn(response);
+
+            webTestClient.get()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result.id").isEqualTo(transactionId.toString());
+        }
+
+        @Test
+        @DisplayName("Should return 404 Not Found when ID does not exist")
+        void getTransaction_NotFound_Returns404() {
+            given(transactionService.getTransaction(transactionId))
+                .willThrow(new AppException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+            webTestClient.get()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.TRANSACTION_NOT_FOUND.getCode())
+                .jsonPath("$.message").isNotEmpty();
+        }
+    }
+
     @Nested
     @DisplayName("POST " + BASE_URL)
     class CreateTransactionTests {

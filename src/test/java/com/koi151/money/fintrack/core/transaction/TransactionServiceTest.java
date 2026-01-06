@@ -105,6 +105,42 @@ class TransactionServiceTest {
     }
 
     @Nested
+    @DisplayName("Tests for get single transaction")
+    class GetTransactionDetailTests {
+
+        @Test
+        @DisplayName("Should return transaction response when ID exists")
+        void getTransaction_IdExists_ReturnsResponse() {
+            // Given
+            UUID id = UUID.randomUUID();
+            Transaction transaction = Transaction.builder().id(id).build();
+            TransactionResponse response = TransactionResponse.builder().id(id).build();
+
+            given(transactionRepository.findById(id)).willReturn(Optional.of(transaction));
+            given(transactionMapper.toResponse(transaction)).willReturn(response);
+
+            // When & Then
+            TransactionResponse result = transactionService.getTransaction(id);
+
+            assertThat(result).isNotNull();
+            assertThat(result.getId()).isEqualTo(id);
+        }
+
+        @Test
+        @DisplayName("Should throw exception when transaction ID is not found")
+        void getTransaction_NotFound_ThrowsException() {
+            // Given
+            UUID id = UUID.randomUUID();
+            given(transactionRepository.findById(id)).willReturn(Optional.empty());
+
+            // When & Then
+            assertThatThrownBy(() -> transactionService.getTransaction(id))
+                .isInstanceOf(AppException.class)
+                .hasFieldOrPropertyWithValue("errorCode", ErrorCode.TRANSACTION_NOT_FOUND);
+        }
+    }
+
+    @Nested
     @DisplayName("Tests for createTransaction")
     class CreateTransactionTests {
 

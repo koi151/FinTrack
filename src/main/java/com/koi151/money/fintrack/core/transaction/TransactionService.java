@@ -33,6 +33,13 @@ public class TransactionService {
             .toList();
     }
 
+    @Transactional(readOnly = true)
+    public TransactionResponse getTransaction(UUID id) {
+        return transactionMapper.toResponse(
+            findTransactionOrThrow(id)
+        );
+    }
+
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {
         log.info("[CREATE_TRANSACTION] Start - categoryId: {}, userId: {}, amount: {}",

@@ -33,6 +33,20 @@ public class TransactionController {
         );
     }
 
+    @Operation(summary = "Get transaction details", description = "Retrieve a single transaction by its unique UUID.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved transaction")
+    @ApiResponse(responseCode = "404", description = "Transaction not found", content = @Content)
+    @GetMapping("/{id}")
+    public AppResponse<TransactionResponse> getTransaction(
+            @Parameter(description = "The UUID of the transaction", example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
+            @PathVariable UUID id) {
+
+        return AppResponse.success(
+            transactionService.getTransaction(id),
+            "Successfully retrieved transaction"
+        );
+    }
+
     @Operation(summary = "Create a new transaction", description = "Record a new expense or income. Validates category and user existence.")
     @ApiResponse(responseCode = "200", description = "Transaction created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid input or business logic violation", content = @Content)

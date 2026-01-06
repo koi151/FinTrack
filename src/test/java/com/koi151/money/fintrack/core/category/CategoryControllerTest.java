@@ -1,6 +1,6 @@
 package com.koi151.money.fintrack.core.category;
 
-import com.koi151.money.fintrack.common.ApiResponse;
+import com.koi151.money.fintrack.common.AppResponse;
 import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
 import com.koi151.money.fintrack.core.transaction.TransactionType;
@@ -80,7 +80,7 @@ class CategoryControllerTest {
                 .expectBody()
 
                 // Assert Envelope Structure
-                .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
                 .jsonPath("$.message").exists()
 
                 // Assert Payload
@@ -203,7 +203,7 @@ class CategoryControllerTest {
                 .expectStatus().isOk()
                 .expectBody()
 
-                .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
                 .jsonPath("$.message").exists()
 
                 .jsonPath("$.result.name").isEqualTo("Updated Name");
@@ -267,7 +267,7 @@ class CategoryControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
                 .jsonPath("$.result.id").isEqualTo(categoryId.toString())
                 .jsonPath("$.result.name").isEqualTo(DEFAULT_NAME);
         }

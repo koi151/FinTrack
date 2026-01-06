@@ -1,6 +1,6 @@
 package com.koi151.money.fintrack.common.exception;
 
-import com.koi151.money.fintrack.common.ApiResponse;
+import com.koi151.money.fintrack.common.AppResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.ResponseEntity;
@@ -18,12 +18,12 @@ public class GlobalExceptionHandler {
 
     // Handle App Specific Exceptions
     @ExceptionHandler(AppException.class)
-    public ResponseEntity<ApiResponse<Object>> handleAppException(AppException ex) {
+    public ResponseEntity<AppResponse<Object>> handleAppException(AppException ex) {
         ErrorCode errorCode = ex.getErrorCode();
         log.warn("Business Error: {}", errorCode.getMessage());
         return ResponseEntity
             .status(errorCode.getHttpStatus())
-            .body(ApiResponse.error(
+            .body(AppResponse.error(
                 errorCode.getCode(),
                 errorCode.getMessage()
             ));
@@ -31,7 +31,7 @@ public class GlobalExceptionHandler {
 
     // Handle Validation Errors (@Valid failure) -> Return Map for FE
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<ApiResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
+    public ResponseEntity<AppResponse<Map<String, String>>> handleValidationException(MethodArgumentNotValidException ex) {
         log.warn("Validation Error: {}", ex.getMessage());
 
         // Collect errors into a Map (Field -> Message)
@@ -48,7 +48,7 @@ public class GlobalExceptionHandler {
         // Return ApiResponse with the Map in 'result' field
         return ResponseEntity
             .status(errorCode.getHttpStatus())
-            .body(ApiResponse.<Map<String, String>>builder()
+            .body(AppResponse.<Map<String, String>>builder()
                 .code(errorCode.getCode())
                 .message(errorCode.getMessage())
                 .result(errors)
@@ -58,12 +58,12 @@ public class GlobalExceptionHandler {
 
     // Catch all & log stack trace
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<ApiResponse<?>> handleUnexpectedException(Exception ex, HttpServletRequest request) {
+    public ResponseEntity<AppResponse<?>> handleUnexpectedException(Exception ex, HttpServletRequest request) {
         log.error("Unexpected Error at {}: ", request.getRequestURI(), ex);
 
         return ResponseEntity
             .status(ErrorCode.SYSTEM_ERROR.getHttpStatus())
-            .body(ApiResponse.error(
+            .body(AppResponse.error(
                 ErrorCode.SYSTEM_ERROR.getCode(),
                 "Internal server error. Please contact admin."
             ));

@@ -1,6 +1,6 @@
 package com.koi151.money.fintrack.core.transaction;
 
-import com.koi151.money.fintrack.common.ApiResponse;
+import com.koi151.money.fintrack.common.AppResponse;
 import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
 import com.koi151.money.fintrack.core.transaction.payload.TransactionRequest;
@@ -81,7 +81,7 @@ class TransactionControllerTest {
                 .expectStatus().isOk()
                 .expectBody()
 
-                .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
                 .jsonPath("$.message").exists()
 
                 .jsonPath("$.result.id").isEqualTo(transactionId)
@@ -159,7 +159,7 @@ class TransactionControllerTest {
                 .expectStatus().isOk()
                 .expectBody()
 
-                .jsonPath("$.code").isEqualTo(ApiResponse.SUCCESS_CODE)
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
                 .jsonPath("$.message").exists()
 
                 .jsonPath("$.result.id").isEqualTo(transactionId.toString())

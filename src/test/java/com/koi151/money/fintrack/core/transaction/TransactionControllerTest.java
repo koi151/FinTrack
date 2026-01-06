@@ -22,6 +22,7 @@ import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 import java.util.stream.Stream;
 
@@ -60,6 +61,58 @@ class TransactionControllerTest {
     }
 
     @Nested
+    @DisplayName("GET " + BASE_URL)
+    class GetTransactionsTests {
+
+        @Test
+        @DisplayName("Should return list of transactions when records exist")
+        void getTransactions_RecordsExist_ReturnsSuccess() {
+            // Given
+            var response1 = buildResponse().id(UUID.randomUUID()).build();
+            var response2 = buildResponse().id(UUID.randomUUID()).build();
+            var transactionList = List.of(response1, response2);
+
+            given(transactionService.getTransactions())
+                .willReturn(transactionList);
+
+            // When & Then
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result").isArray()
+                .jsonPath("$.result.length()").isEqualTo(2)
+                .jsonPath("$.result[0].id").isEqualTo(response1.getId().toString())
+                .jsonPath("$.result[1].id").isEqualTo(response2.getId().toString());
+        }
+
+        @Test
+        @DisplayName("Should return empty list wrapper when no transactions are found")
+        void getTransactions_NoRecords_ReturnsEmptyArray() {
+            // Given
+            given(transactionService.getTransactions())
+                .willReturn(List.of());
+
+            // When & Then
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result").isArray()
+                .jsonPath("$.result").isEmpty();
+        }
+    }
+    @Nested
     @DisplayName("POST " + BASE_URL)
     class CreateTransactionTests {
 
@@ -82,7 +135,7 @@ class TransactionControllerTest {
                 .expectBody()
 
                 .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
-                .jsonPath("$.message").exists()
+                .jsonPath("$.message").isNotEmpty()
 
                 .jsonPath("$.result.id").isEqualTo(transactionId)
                 .jsonPath("$.result.userId").isEqualTo(userId)
@@ -160,7 +213,7 @@ class TransactionControllerTest {
                 .expectBody()
 
                 .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
-                .jsonPath("$.message").exists()
+                .jsonPath("$.message").isNotEmpty()
 
                 .jsonPath("$.result.id").isEqualTo(transactionId.toString())
                 .jsonPath("$.result.amount").isEqualTo(DEFAULT_AMOUNT)

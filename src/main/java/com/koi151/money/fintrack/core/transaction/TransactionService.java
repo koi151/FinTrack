@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -22,6 +23,15 @@ public class TransactionService {
     private final CategoryRepository categoryRepository;
     private final TransactionMapper transactionMapper;
     private final TransactionValidator transactionValidator;
+
+    @Transactional(readOnly = true)
+    public List<TransactionResponse> getTransactions() {
+        // @Todo pagination, filters, find by user id
+
+        return transactionRepository.findAll().stream()
+            .map(transactionMapper::toResponse)
+            .toList();
+    }
 
     @Transactional
     public TransactionResponse createTransaction(TransactionRequest request) {

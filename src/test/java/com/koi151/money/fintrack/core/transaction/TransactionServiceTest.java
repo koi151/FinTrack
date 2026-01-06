@@ -15,6 +15,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -45,6 +46,63 @@ class TransactionServiceTest {
     // Common Test Values
     private static final BigDecimal DEFAULT_AMOUNT = BigDecimal.valueOf(100.0);
     private static final String DEFAULT_CATEGORY_NAME = "Food & Dining";
+
+    @Nested
+    @DisplayName("Tests for getTransactions")
+    class GetTransactionsTests {
+
+        @Test
+        @DisplayName("Should return a list of transactions when records exist")
+        void getTransactions_RecordsExist_ReturnsList() {
+            // Given -------------------
+            // existing transactions
+            Transaction transaction1 = Transaction.builder()
+                .id(UUID.randomUUID())
+                .build();
+            Transaction transaction2 = Transaction.builder()
+                .id(UUID.randomUUID())
+                .build();
+
+            List<Transaction> transactions = List.of(transaction1, transaction2);
+
+            // mapped responses
+            TransactionResponse response1 = TransactionResponse.builder()
+                .id(transaction1.getId())
+                .build();
+            TransactionResponse response2 = TransactionResponse.builder()
+                .id(transaction2.getId())
+                .build();
+
+            given(transactionRepository.findAll()).willReturn(transactions);
+            given(transactionMapper.toResponse(transaction1)).willReturn(response1);
+            given(transactionMapper.toResponse(transaction2)).willReturn(response2);
+
+            // When ----------------
+            List<TransactionResponse> result = transactionService.getTransactions();
+
+            // Then ----------------
+            assertThat(result)
+                .hasSize(2)
+                .containsExactly(response1, response2);
+
+            verify(transactionRepository, times(1)).findAll();
+        }
+
+        @Test
+        @DisplayName("Should return an empty list when no records exist")
+        void getTransactions_NoRecords_ReturnsEmptyList() {
+            // Given
+            given(transactionRepository.findAll()).willReturn(List.of());
+
+            // When
+            List<TransactionResponse> result = transactionService.getTransactions();
+
+            // Then
+            assertThat(result).isNotNull().isEmpty();
+            verify(transactionRepository, times(1)).findAll();
+            verify(transactionMapper, never()).toResponse(any());
+        }
+    }
 
     @Nested
     @DisplayName("Tests for createTransaction")
@@ -119,6 +177,9 @@ class TransactionServiceTest {
                 .categoryId(UUID.randomUUID())
                 .build();
 
+            doThrow(new AppException(ErrorCode.INVALID_PARAM))
+                .when(transactionValidator).validateForCreate(request);
+
             // When & Then
             assertThatThrownBy(() -> transactionService.createTransaction(request))
                 .isInstanceOf(AppException.class)
@@ -134,6 +195,9 @@ class TransactionServiceTest {
                 .amount(DEFAULT_AMOUNT.negate())
                 .categoryId(UUID.randomUUID())
                 .build();
+
+            doThrow(new AppException(ErrorCode.INVALID_PARAM))
+                .when(transactionValidator).validateForCreate(request);
 
             // When & Then
             assertThatThrownBy(() -> transactionService.createTransaction(request))

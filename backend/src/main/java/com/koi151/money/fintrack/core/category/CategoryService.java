@@ -6,6 +6,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.UUID;
 
 @Service
@@ -15,6 +16,20 @@ public class CategoryService {
     private final CategoryRepository categoryRepository;
     private final CategoryMapper categoryMapper;
     private final CategoryValidator categoryValidator;
+
+    public List<CategoryResponse> getCategories() {
+        return categoryRepository.findAll().stream()
+            .map(categoryMapper::toResponse)
+            .toList();
+    }
+
+    @Transactional(readOnly = true)
+    public CategoryResponse getCategory(UUID id) {
+        // Todo extract and filter by user ID too -> dynamic queries if needed
+        return categoryRepository.findById(id)
+            .map(categoryMapper::toResponse)
+            .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+    }
 
     @Transactional
     public CategoryResponse createCategory(CategoryRequest request) {
@@ -42,14 +57,6 @@ public class CategoryService {
 
         categoryMapper.updateEntity(existingCategory, request);
         return categoryMapper.toResponse(categoryRepository.save(existingCategory));
-    }
-
-    @Transactional(readOnly = true)
-    public CategoryResponse getCategory(UUID id) {
-        // Todo extract and filter by user ID too -> dynamic queries if needed
-        return categoryRepository.findById(id)
-            .map(categoryMapper::toResponse)
-            .orElseThrow(() -> new AppException(ErrorCode.CATEGORY_NOT_FOUND));
     }
 
     @Transactional

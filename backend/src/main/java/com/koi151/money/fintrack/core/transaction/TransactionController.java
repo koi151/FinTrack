@@ -39,8 +39,8 @@ public class TransactionController {
     @GetMapping("/{id}")
     public AppResponse<TransactionResponse> getTransaction(
             @Parameter(description = "The UUID of the transaction", example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
-            @PathVariable UUID id) {
-
+            @PathVariable UUID id)
+    {
         return AppResponse.success(
             transactionService.getTransaction(id),
             "Successfully retrieved transaction"

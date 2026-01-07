@@ -58,6 +58,55 @@ class CategoryControllerTest {
     }
 
     @Nested
+    @DisplayName("GET " + BASE_URL)
+    class GetCategoriesTests {
+
+        @Test
+        @DisplayName("Should return list of categories when categories exist")
+        void getCategories_Exist_ReturnsList() {
+            // Given
+            var response1 = buildResponse()
+                .id(UUID.randomUUID())
+                .name("Food")
+                .build();
+            var response2 = buildResponse()
+                .id(UUID.randomUUID())
+                .name("Salary")
+                .type(TransactionType.INCOME).build();
+
+            given(categoryService.getCategories()).willReturn(java.util.List.of(response1, response2));
+
+            // When & Then
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result").isArray()
+                .jsonPath("$.result.length()").isEqualTo(2)
+                .jsonPath("$.result[0].name").isEqualTo("Food")
+                .jsonPath("$.result[1].name").isEqualTo("Salary");
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no categories exist")
+        void getCategories_Empty_ReturnsEmptyList() {
+            given(categoryService.getCategories()).willReturn(java.util.List.of());
+
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.result").isEmpty();
+        }
+    }
+
+    @Nested
     @DisplayName("POST " + BASE_URL)
     class CreateCategoryTests {
 
@@ -289,7 +338,7 @@ class CategoryControllerTest {
                 .exchange()
                 .expectStatus().isOk()
                 .expectBody()
-                .jsonPath("$.message").exists()
+                .jsonPath("$.message").isNotEmpty()
                 .jsonPath("$.result").doesNotExist();
         }
     }

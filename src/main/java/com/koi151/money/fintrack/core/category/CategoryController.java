@@ -10,6 +10,7 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -19,6 +20,24 @@ import java.util.UUID;
 public class CategoryController {
 
     private final CategoryService categoryService;
+
+    @Operation(summary = "Get all categories", description = "Retrieve a list of all finance categories.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved categories")
+    @GetMapping
+    public AppResponse<List<CategoryResponse>> getCategories() {
+        return AppResponse.success(categoryService.getCategories(), "Successfully retrieved categories");
+    }
+
+    @Operation(summary = "Get category details", description = "Retrieve full details of a specific category.")
+    @ApiResponse(responseCode = "200", description = "Successfully retrieved category")
+    @ApiResponse(responseCode = "404", description = "Category not found", content = @Content)
+    @GetMapping("/{id}")
+    public AppResponse<CategoryResponse> getCategory(
+            @Parameter(description = "The UUID of the category to retrieve")
+            @PathVariable UUID id)
+    {
+        return AppResponse.success(categoryService.getCategory(id), "Successfully get category");
+    }
 
     @Operation(summary = "Create a new category", description = "Create a new transaction category. Name must be unique.")
     @ApiResponse(responseCode = "200", description = "Category created successfully")
@@ -39,17 +58,6 @@ public class CategoryController {
         @PathVariable UUID id, @RequestBody @Valid CategoryRequest request)
     {
         return AppResponse.success(categoryService.updateCategory(id, request), "Successfully updated category");
-    }
-
-    @Operation(summary = "Get category details", description = "Retrieve full details of a specific category.")
-    @ApiResponse(responseCode = "200", description = "Successfully retrieved category")
-    @ApiResponse(responseCode = "404", description = "Category not found", content = @Content)
-    @GetMapping("/{id}")
-    public AppResponse<CategoryResponse> getCategory(
-        @Parameter(description = "The UUID of the category to retrieve")
-        @PathVariable UUID id)
-    {
-        return AppResponse.success(categoryService.getCategory(id), "Successfully get category");
     }
 
     @Operation(summary = "Delete a category", description = "Permanently remove a category from the system.")

@@ -1,14 +1,8 @@
 @use '../styles/variables' as *; 
 
 .dashboard-content {
-  padding: $spacing-base * 2.5;
+  padding: $spacing-base * 2;
   width: 100%;
-  margin: 0 auto;
-  max-width: 100rem; 
-
-  @media (max-width: $mobile) {
-    padding: $spacing-base;
-  }
 }
 
 .header-row {
@@ -16,8 +10,62 @@
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: $spacing-base * 1.5;
+}
 
-  @media (max-width: $mobile) {
+.shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: $radius-md;
+}
+
+.master-detail-row {
+  position: relative;
+  height: 100%;
+}
+
+// --- Animation for Split View ---
+
+// Transaction List column: expand/collapse effect
+.transition-col {
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+// Detail panel: slide-in effect
+.detail-panel-col {
+  animation: slideInRight 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  
+  .detail-card {
+    height: 100%;
+    border-left: 1px solid rgba(0,0,0,0.06);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// --- Table Highlight Style ---
+// Override Antd table row style when selected
+.ant-table-tbody > tr.ant-table-row-selected > td {
+  background-color: #6e6e6e41 !important;
+}
+
+
+// --- Responsive / Media Queries ---
+
+// Mobile Breakpoint
+@media (max-width: $mobile) {
+  .dashboard-content {
+    padding: $spacing-base;
+  }
+
+  .header-row {
     flex-direction: column;
     align-items: flex-start;
     gap: $spacing-base;
@@ -29,7 +77,10 @@
   }
 }
 
-.shadow-sm {
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-  border-radius: $radius-md;
+// Desktop / Large Screen Breakpoint
+@media (min-width: 992px) {
+  .master-detail-row {
+    flex-wrap: nowrap !important;     
+    overflow: hidden; 
+  }
 }

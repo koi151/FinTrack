@@ -3,6 +3,13 @@
 .dashboard-content {
   padding: $spacing-base * 2;
   width: 100%;
+  
+  // Add extra padding at the bottom on mobile so content isn't hidden behind the nav bar
+  &.mobile-padding {
+    padding-bottom: 100px;
+    padding-left: $spacing-base;
+    padding-right: $spacing-base;
+  }
 }
 
 .header-row {
@@ -24,7 +31,7 @@
 
 // --- Animation for Split View ---
 
-// Transaction List column: expand/collapse effect
+// Transaction list column: expand/collapse effect
 .transition-col {
   transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
 }
@@ -36,6 +43,13 @@
   .detail-card {
     height: 100%;
     border-left: 1px solid rgba(0,0,0,0.06);
+  }
+
+  // Header styling for the Desktop Detail Card
+  .detail-card-header {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
   }
 }
 
@@ -50,21 +64,123 @@
   }
 }
 
+// --- OVERVIEW STYLES ---
+.metric-card {
+  .ant-statistic-title {
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+
+  .ant-card-body {
+    padding: 24px; 
+  }
+}
+
+.chart-card {
+  height: 100%;
+
+  .ant-card-body {
+    padding: 24px; 
+  }
+}
+
 // --- Table Highlight Style ---
-// Override Antd table row style when selected
 .ant-table-tbody > tr.ant-table-row-selected > td {
   background-color: #6e6e6e41 !important;
 }
 
 
+// --- Mobile Drawer (Bottom Sheet) Styles ---
+.mobile-detail-drawer {
+  .ant-drawer-content-wrapper {
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+  }
+  
+  .ant-drawer-body {
+    padding-bottom: 40px;
+  }
+}
+
+
+// --- MOBILE BOTTOM NAVIGATION (NEW) ---
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 70px;
+  background: #141414; 
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 1000;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-bottom: env(safe-area-inset-bottom); // Support for iPhone X+ home bar
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.5);
+
+  .nav-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #6c757d; // Inactive color
+    font-size: 10px;
+    gap: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    .nav-icon {
+      font-size: 20px;
+    }
+
+    &.active {
+      color: $primary-color;
+      
+      .nav-icon {
+        color: $primary-color;
+      }
+    }
+  }
+
+  // Floating Action Button Container
+  .center-fab-container {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    height: 100%;
+    position: relative;
+    
+    // The Green Circle Button
+    .fab-button {
+      background: $primary-color;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      border: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px rgba(16, 185, 129, 0.4);
+      cursor: pointer;
+      position: absolute;
+      bottom: 25px;
+      transition: transform 0.2s;
+
+      &:active {
+        transform: scale(0.95);
+      }
+    }
+  }
+}
+
 // --- Responsive / Media Queries ---
 
 // Mobile Breakpoint
 @media (max-width: $mobile) {
-  .dashboard-content {
-    padding: $spacing-base;
-  }
-
   .header-row {
     flex-direction: column;
     align-items: flex-start;

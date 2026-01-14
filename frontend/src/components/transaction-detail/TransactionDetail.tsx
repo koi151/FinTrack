@@ -3,6 +3,9 @@ import { Descriptions, Tag, Button, Typography, Space, Divider } from 'antd';
 import { Edit, Trash2, Calendar, FileText, LayoutGrid } from 'lucide-react';
 import dayjs from 'dayjs';
 
+// Import the separated styles
+import './TransactionDetail.scss';
+
 const { Title, Text } = Typography;
 
 interface TransactionDetailProps {
@@ -15,6 +18,7 @@ interface TransactionDetailProps {
 const TransactionDetail: React.FC<TransactionDetailProps> = ({ data, onEdit, onDelete }) => {
   if (!data) return null;
 
+  // Determine transaction type for styling
   const isExpense = data.categoryType === 'EXPENSE';
   const color = isExpense ? '#ff4d4f' : '#52c41a';
   const sign = isExpense ? '-' : '+';
@@ -22,35 +26,54 @@ const TransactionDetail: React.FC<TransactionDetailProps> = ({ data, onEdit, onD
   return (
     <div className="transaction-detail">
 
-      {/* Header: Amount and Actions */}
-      <div style={{ textAlign: 'center', marginBottom: 24 }}>
-        <Title level={1} style={{ color: color, margin: 0 }}>
+      {/* 1. Header: Display Amount and Type */}
+      <div className="detail-header">
+        {/* keep the dynamic color inline as it depends on data */}
+        <Title level={1} style={{ color: color }}>
           {sign}${data.amount?.toFixed(2)}
         </Title>
-        <Text type="secondary">{isExpense ? 'Expense' : 'Income'}</Text>
+        <Text type="secondary" strong>
+          {isExpense ? 'Expense' : 'Income'}
+        </Text>
       </div>
 
-      <div style={{ display: 'flex', gap: 12, justifyContent: 'center', marginBottom: 32 }}>
-        <Button icon={<Edit size={16} />} onClick={onEdit}>Edit</Button>
-        <Button danger icon={<Trash2 size={16} />} onClick={onDelete}>Delete</Button>
+      {/* 2. Action Buttons */}
+      <div className="action-buttons">
+        <Button icon={<Edit size={16} />} onClick={onEdit}>
+          Edit
+        </Button>
+        <Button danger icon={<Trash2 size={16} />} onClick={onDelete}>
+          Delete
+        </Button>
       </div>
 
-      <Divider />
+      <Divider style={{ margin: '24px 0' }} />
 
-      {/* 2. Detailed Information */}
-      <Descriptions column={1} size="middle" contentStyle={{ justifyContent: 'flex-end' }}>
+      {/* 3. Detailed Information List */}
+      <Descriptions 
+        column={1} 
+        size="middle" 
+        contentStyle={{ justifyContent: 'flex-end' }}
+      >
         <Descriptions.Item label={<Space><Calendar size={16}/> Date</Space>}>
           {dayjs(data.transactionDate).format('DD MMM, YYYY - HH:mm')}
         </Descriptions.Item>
 
         <Descriptions.Item label={<Space><LayoutGrid size={16}/> Category</Space>}>
-           <Tag color={isExpense ? 'red' : 'green'}>{data.categoryName}</Tag>
+           <Tag color={isExpense ? 'red' : 'green'} style={{ marginInlineEnd: 0 }}>
+             {data.categoryName}
+           </Tag>
         </Descriptions.Item>
 
         <Descriptions.Item label={<Space><FileText size={16}/> Note</Space>}>
-          {data.note ? data.note : <Text type="secondary" italic>No description</Text>}
+          {data.note ? (
+            <span>{data.note}</span>
+          ) : (
+            <Text type="secondary" italic>No description</Text>
+          )}
         </Descriptions.Item>
       </Descriptions>
+      
     </div>
   );
 };

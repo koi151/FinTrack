@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Form, Input, InputNumber, Select, DatePicker, Button, Space, Segmented } from 'antd';
-import { Tag, DollarSign, FileText, LayoutGrid } from 'lucide-react';
+import { Tag, DollarSign, FileText, LayoutGrid, TrendingUp, TrendingDown } from 'lucide-react';
 import dayjs from 'dayjs';
 
 interface FinanceFormProps {
@@ -14,8 +14,12 @@ interface FinanceFormProps {
 const FinanceForm: React.FC<FinanceFormProps> = ({ type, initialValues, onFinish, loading, categories = [] }) => {
   const [form] = Form.useForm();
   
-  // Local state to track transaction type for filtering categories
+  // Local state to track transaction type for filtering categories (and UI styling)
   const [transactionType, setTransactionType] = useState<'EXPENSE' | 'INCOME'>('EXPENSE');
+
+  // Custom Color Constants
+  const INCOME_COLOR = '#639e46ff';
+  const EXPENSE_COLOR = '#ff4d4f';
 
   useEffect(() => {
     if (initialValues) {
@@ -31,7 +35,12 @@ const FinanceForm: React.FC<FinanceFormProps> = ({ type, initialValues, onFinish
       form.resetFields();
       // Default to Expense if new
       setTransactionType('EXPENSE'); 
-      form.setFieldValue('type', 'EXPENSE');
+      
+      // Set defaults for new entry
+      form.setFieldsValue({
+        type: 'EXPENSE',
+        transactionDate: dayjs() 
+      });
     }
   }, [initialValues, form]);
 
@@ -40,7 +49,53 @@ const FinanceForm: React.FC<FinanceFormProps> = ({ type, initialValues, onFinish
 
   const handleTypeChange = (value: 'EXPENSE' | 'INCOME') => {
     setTransactionType(value);
-    form.setFieldValue('categoryId', null); // Clear category when type changes to avoid mismatch
+    // Clear category when type changes to avoid mismatch (only matters for Transaction mode)
+    if (type === 'transaction') {
+      form.setFieldValue('categoryId', null); 
+    }
+  };
+
+  // Shared Options for Segmented Control
+  const typeOptions = [
+    { 
+      value: 'EXPENSE' as const, 
+      label: (
+        <div style={{ 
+          padding: '4px', 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          color: transactionType === 'EXPENSE' ? EXPENSE_COLOR : undefined,
+          fontWeight: transactionType === 'EXPENSE' ? 600 : 400
+        }}>
+          <TrendingDown size={18} />
+          <span>Expense</span>
+        </div>
+      )
+    }, 
+    { 
+      value: 'INCOME' as const, 
+      label: (
+        <div style={{ 
+          padding: '4px', 
+          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+          color: transactionType === 'INCOME' ? INCOME_COLOR : undefined,
+          fontWeight: transactionType === 'INCOME' ? 600 : 400
+        }}>
+          <TrendingUp size={18} />
+          <span>Income</span>
+        </div>
+      )
+    }
+  ];
+
+  // Helper to generate dynamic button text
+  const getButtonText = () => {
+    if (initialValues) return 'Save Changes';
+    
+    // Capitalize first letter of 'category' or 'transaction'
+    const suffix = type.charAt(0).toUpperCase() + type.slice(1);
+    const typeLabel = transactionType === 'EXPENSE' ? 'Expense' : 'Income';
+    
+    return `Create ${typeLabel} ${suffix}`; // e.g., "Create Expense Category"
   };
 
   return (
@@ -55,19 +110,24 @@ const FinanceForm: React.FC<FinanceFormProps> = ({ type, initialValues, onFinish
           <Form.Item name="name" label="Name" rules={[{ required: true }]}>
             <Input prefix={<Tag size={16} style={{ marginRight: "2px" }} />} placeholder="e.g. Shopping" />
           </Form.Item>
+          
           <Form.Item name="type" label="Type" rules={[{ required: true }]}>
-            <Select options={[{ label: 'Expense', value: 'EXPENSE' }, { label: 'Income', value: 'INCOME' }]} />
+            <Segmented 
+              block 
+              size="large"
+              options={typeOptions}
+              value={transactionType}
+              onChange={handleTypeChange}
+            />
           </Form.Item>
         </>
       ) : (
         <>
-          <Form.Item name="type" style={{ marginBottom: 12 }}>
+          <Form.Item name="type" style={{ marginBottom: 24 }}>
             <Segmented 
               block 
-              options={[
-                { label: 'Expense', value: 'EXPENSE' }, 
-                { label: 'Income', value: 'INCOME' }
-              ]}
+              size="large"
+              options={typeOptions}
               value={transactionType}
               onChange={handleTypeChange}
             />
@@ -82,7 +142,6 @@ const FinanceForm: React.FC<FinanceFormProps> = ({ type, initialValues, onFinish
             />
           </Form.Item>
 
-          {/* Added Category Select */}
           <Form.Item 
             name="categoryId" 
             label="Category" 
@@ -102,12 +161,13 @@ const FinanceForm: React.FC<FinanceFormProps> = ({ type, initialValues, onFinish
             />
           </Form.Item>
 
-          <Form.Item name="transactionDate" label="Date" rules={[{ required: true }]}>
+            <Form.Item name="transactionDate" label="Date" rules={[{ required: true }]}>
             <DatePicker 
               style={{ width: '100%' }}
               placeholder="Select date"
+              maxDate={dayjs()}
             />
-          </Form.Item>
+            </Form.Item>
 
           <Form.Item 
             name="note" 
@@ -124,8 +184,20 @@ const FinanceForm: React.FC<FinanceFormProps> = ({ type, initialValues, onFinish
           </Form.Item>
         </>
       )}
-      <Button type="primary" htmlType="submit" block loading={loading} size="large" style={{ marginTop: 8 }}>
-        {initialValues ? 'Save Changes' : `Create ${type}`}
+
+      {/* UX FIX: Reverted to standard primary color button. 
+         Using Red for a "Create" action is confusing (looks like Delete).
+         The context is already clear from the Segmented Control above.
+      */}
+      <Button 
+        type="primary" 
+        htmlType="submit" 
+        block 
+        loading={loading} 
+        size="large" 
+        style={{ marginTop: 8 }}
+      >
+        {getButtonText()}
       </Button>
     </Form>
   );

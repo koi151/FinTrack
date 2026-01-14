@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ConfigProvider, theme, Layout } from 'antd';
 import Dashboard from './pages/Dashboard';
-import ThemeSwitcher from './components/Layout/ThemeSwitcher';
+import ThemeSwitcher from './components/layout/ThemeSwitcher';
 
 const App: React.FC = () => {
   const [isDark, setIsDark] = useState(true);

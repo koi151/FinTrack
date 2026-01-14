@@ -1,0 +1,66 @@
+@use '../../../styles/variables' as *; 
+
+.master-detail-row {
+  position: relative;
+  height: 100%;
+}
+
+// --- Animation for Split View ---
+
+// Transaction list column: expand/collapse effect
+.transition-col {
+  transition: all 0.3s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
+
+// Detail panel: slide-in effect
+.detail-panel-col {
+  animation: slideInRight 0.35s cubic-bezier(0.23, 1, 0.32, 1);
+  
+  .detail-card {
+    height: 100%;
+    border-left: 1px solid rgba(0,0,0,0.06);
+  }
+
+  // Header styling for the Desktop Detail Card
+  .detail-card-header {
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+// --- Table Highlight Style ---
+.ant-table-tbody > tr.ant-table-row-selected > td {
+  background-color: #6e6e6e41 !important;
+}
+
+// --- Mobile Drawer (Bottom Sheet) Styles ---
+.mobile-detail-drawer {
+  .ant-drawer-content-wrapper {
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+  }
+  
+  .ant-drawer-body {
+    padding-bottom: 40px;
+  }
+}
+
+// --- Responsive: Desktop Split View ---
+@media (min-width: 992px) {
+  .master-detail-row {
+    flex-wrap: nowrap !important;     
+    overflow: hidden; 
+  }
+}

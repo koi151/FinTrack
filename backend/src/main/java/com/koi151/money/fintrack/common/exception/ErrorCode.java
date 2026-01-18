@@ -18,8 +18,16 @@ public enum ErrorCode {
     CATEGORY_EXISTED(2002, "Category already exists", HttpStatus.CONFLICT),
 
     /** 3xxx: Transaction Module -------------------------------------- */
-    TRANSACTION_NOT_FOUND(2001, "Transaction not found", HttpStatus.NOT_FOUND),
-    TRANSACTION_EXISTED(3002, "Transaction already exists", HttpStatus.CONFLICT);
+    TRANSACTION_NOT_FOUND(3001, "Transaction not found", HttpStatus.NOT_FOUND),
+    TRANSACTION_EXISTED(3002, "Transaction already exists", HttpStatus.CONFLICT),
+
+    /** 4xxx: User Module -------------------------------------- */
+    USER_NOT_FOUND(4001, "User not found", HttpStatus.NOT_FOUND),
+
+    // conflict
+    USERNAME_EXISTED(4002, "User name already exists", HttpStatus.CONFLICT),
+    USER_EMAIL_EXISTED(4002, "Email already exists", HttpStatus.CONFLICT),
+    OAUTH_ACCOUNT_ALREADY_LINKED(4004, "This social account is already linked to another user", HttpStatus.CONFLICT);
 
     private final int code;
     private final String message;

@@ -40,5 +40,6 @@ public abstract class TransactionMapper {
 
     @Mapping(source = "category.name", target = "categoryName")
     @Mapping(source = "category.id", target = "categoryId")
+    @Mapping(source = "category.type", target = "categoryType")
     public abstract TransactionResponse toResponse(Transaction transaction);
 }

@@ -32,4 +32,7 @@ public class TransactionResponse {
 
     @Schema(description = "UUID of the user", example = "7b23315a-5927-466d-8e68-3605658e23f0")
     private UUID userId;
+
+    @Schema(description = "Category Type", example = "EXPENSE")
+    private String categoryType;
 }

@@ -55,7 +55,6 @@ public class GlobalExceptionHandler {
                 .build());
     }
 
-
     // Catch all & log stack trace
     @ExceptionHandler(Exception.class)
     public ResponseEntity<AppResponse<?>> handleUnexpectedException(Exception ex, HttpServletRequest request) {

@@ -20,7 +20,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
 class CategoryServiceTest {
@@ -159,7 +163,7 @@ class CategoryServiceTest {
         @Test
         @DisplayName("Should update successfully when category exists and name is unique")
         void updateCategory_ValidRequest_Success() {
-            // Given
+            // Given --------------------------
             UUID id = UUID.randomUUID();
             CategoryRequest request = buildRequest().name("New Unique Name").build(); // User wants to change name
 
@@ -167,24 +171,20 @@ class CategoryServiceTest {
             Category updatedEntity = buildEntity().id(id).name("New Unique Name").build();
             CategoryResponse expectedResponse = buildResponse().id(id).name("New Unique Name").build();
 
-            // 1. Found existing
+            // Found existing
             given(categoryRepository.findById(id)).willReturn(Optional.of(existingEntity));
 
-            // 2. Name changed, so check DB for duplicates (excluding current ID) -> Returns false (Unique)
-            given(categoryRepository.existsByNameAndIdNot(request.name(), id)).willReturn(false);
-
-            // 3. Save returns the updated entity
+            // Save returns the updated entity
             given(categoryRepository.save(existingEntity)).willReturn(updatedEntity);
             given(categoryMapper.toResponse(updatedEntity)).willReturn(expectedResponse);
 
-            // When
+            // When --------------------------
             CategoryResponse result = categoryService.updateCategory(id, request);
 
-            // Then
+            // Then --------------------------
             assertThat(result).isNotNull();
             assertThat(result.name()).isEqualTo("New Unique Name");
 
-            // Verify mapper was called to update state
             verify(categoryMapper).updateEntity(existingEntity, request);
             verify(categoryRepository).save(existingEntity);
         }

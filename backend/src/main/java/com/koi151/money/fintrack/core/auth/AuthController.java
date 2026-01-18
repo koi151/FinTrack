@@ -51,7 +51,7 @@ public class AuthController {
     ) {
         UserResponse newUser = userService.register(request);
         return ResponseEntity
-            .status(HttpStatus.CREATED) // 201 Created
+            .status(HttpStatus.CREATED)
             .body(AppResponse.success(newUser, "User registered successfully"));
     }
 }

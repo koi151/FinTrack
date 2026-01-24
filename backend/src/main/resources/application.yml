@@ -1,0 +1,24 @@
+spring:
+  application:
+    name: FinTrack
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/fintrack
+    username: postgres
+    password: p@ssw0rd123
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: validate # flyway create tables instead of hibernate
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    baseline-on-migrate: true # auto create flyway_schema_history if not exist
+    clean-disabled: false # allow flyway clean for development
+    clean-on-validation-error: true # clean and re-run migrations on checksum mismatch
+    locations: classpath:db/migration

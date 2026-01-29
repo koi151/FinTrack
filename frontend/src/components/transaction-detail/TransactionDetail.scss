@@ -1,0 +1,56 @@
+@use '../../styles/variables' as *; 
+
+.transaction-detail {
+  width: 100%;
+  
+  // --- Mobile Optimization ---
+  @media (max-width: $mobile) {
+    max-width: 450px; 
+    margin: 0 auto;
+    padding: 0 $spacing-base; 
+  }
+
+  // --- Header Section (Amount & Type) ---
+  .detail-header {
+    text-align: center;
+    margin-bottom: 24px;
+
+    h1.ant-typography {
+      margin: 0;
+      font-size: 2.5rem;
+      
+      @media (max-width: $mobile) {
+        font-size: 2rem; // Slightly smaller on mobile
+      }
+    }
+  }
+
+  // --- Action Buttons (Edit/Delete) ---
+  .action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin-bottom: 32px;
+
+    // Make buttons slightly larger on mobile for better touch targets
+    @media (max-width: $mobile) {
+      button {
+        height: 40px;
+        padding: 0 20px;
+      }
+    }
+  }
+
+  // --- Description List Customization ---
+  .ant-descriptions {
+    
+    .ant-descriptions-item-label {
+      color: #8c8c8c;
+      font-weight: 500;
+    }
+    
+    .ant-descriptions-item-content {
+      font-weight: 600;
+    }
+  }
+}

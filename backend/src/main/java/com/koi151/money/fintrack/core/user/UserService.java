@@ -1,19 +1,13 @@
 package com.koi151.money.fintrack.core.user;
 
-import com.koi151.money.fintrack.common.exception.DbExceptionHelper;
-import com.koi151.money.fintrack.common.exception.ErrorCode;
 import com.koi151.money.fintrack.core.user.domain.User;
-import com.koi151.money.fintrack.core.user.domain.UserFactory;
-import com.koi151.money.fintrack.core.user.payload.UserRegisterRequest;
-import com.koi151.money.fintrack.core.user.payload.UserResponse;
+import com.koi151.money.fintrack.core.user.payload.UserSyncRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.dao.DataIntegrityViolationException;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Map;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -22,48 +16,62 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final UserMapper userMapper;
-    private final PasswordEncoder passwordEncoder;
-    private final UserFactory userFactory;
 
     /**
-     * Config for mapping database constraint violations to error codes.
-     */
-    private static final Map<String, ErrorCode> CONSTRAINT_ERROR_MAP = Map.of(
-        User.UK_USER_EMAIL, ErrorCode.USER_EMAIL_EXISTED,
-        User.UK_USER_USERNAME, ErrorCode.USERNAME_EXISTED,
-        User.UK_USER_PROVIDER_IDENTITY, ErrorCode.OAUTH_ACCOUNT_ALREADY_LINKED
-    );
-
-    /**
-     * Register a new user
-     * @return UserResponse DTO of the newly registered user
+     * Synchronizes the user identity from the Identity Provider (Keycloak) to the local database.
+     * This method implements an "Upsert" strategy: Update if exists, Create if new.
+     *
+     * @param request The DTO containing identity claims extracted from the JWT.
      */
     @Transactional
-    public UserResponse register(UserRegisterRequest request) {
-        String encodedPassword = passwordEncoder.encode(request.password());
+    public void syncUser(UserSyncRequest request) {
+        Optional<User> existingUserOpt = userRepository.findById(request.id());
 
-        User newUser = userFactory.createLocalUser(
-            request.username(),
-            request.email(),
-            encodedPassword
+        existingUserOpt.ifPresentOrElse(
+            existingUser -> updateExistingUser(existingUser, request),
+            () -> createNewUser(request)
         );
-
-        User savedUser = saveUserSafely(newUser);
-        log.info("User registered successfully with ID: {}", savedUser.getId());
-
-        return userMapper.toResponse(savedUser);
     }
 
     /**
-     * Safely attempts to save the user to the database.
-     * @param user the user entity to save
-     * @return the persisted user entity
+     * Persists a new user entity derived from the sync request.
      */
-    private User saveUserSafely(User user) {
-        try {
-            return userRepository.save(user);
-        } catch (DataIntegrityViolationException e) {
-            throw DbExceptionHelper.handleDataIntegrityViolation(e, CONSTRAINT_ERROR_MAP);
+    private void createNewUser(UserSyncRequest request) {
+        // OOP: The mapper handles the object transformation, keeping this service method clean.
+        User newUser = userMapper.toEntity(request);
+
+        userRepository.save(newUser);
+        log.info("New user provisioned successfully. ID: {}, Username: {}", request.id(), request.username());
+    }
+
+    /**
+     * Updates mutable fields of an existing user if changes are detected.
+     * This ensures the local profile stays consistent with Keycloak.
+     */
+    private void updateExistingUser(User existingUser, UserSyncRequest request) {
+        boolean isUpdated = false;
+
+        // Domain Logic: Check each field for changes to avoid unnecessary DB writes
+        if (!existingUser.getEmail().equals(request.email())) {
+            existingUser.setEmail(request.email());
+            isUpdated = true;
+        }
+
+        if (!existingUser.getUsername().equals(request.username())) {
+            existingUser.setUsername(request.username());
+            isUpdated = true;
+        }
+
+        // Handle nullable fields carefully
+        if (request.fullName() != null && !request.fullName().equals(existingUser.getFullName())) {
+            existingUser.setFullName(request.fullName());
+            isUpdated = true;
+        }
+
+        if (isUpdated) {
+            userRepository.save(existingUser);
+            log.debug("User profile synced and updated. ID: {}", request.id());
         }
     }
+
 }

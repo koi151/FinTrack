@@ -2,6 +2,7 @@ package com.koi151.money.fintrack.core.user;
 
 import com.koi151.money.fintrack.core.user.domain.User;
 import com.koi151.money.fintrack.core.user.payload.UserResponse;
+import com.koi151.money.fintrack.core.user.payload.UserSyncRequest;
 import org.mapstruct.Mapper;
 import org.mapstruct.ReportingPolicy;
 
@@ -9,4 +10,6 @@ import org.mapstruct.ReportingPolicy;
 public interface UserMapper {
 
     UserResponse toResponse(User user);
+
+    User toEntity(UserSyncRequest request);
 }

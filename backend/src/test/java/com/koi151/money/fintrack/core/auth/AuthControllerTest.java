@@ -4,8 +4,8 @@ import com.koi151.money.fintrack.common.AppResponse;
 import com.koi151.money.fintrack.common.exception.AppException;
 import com.koi151.money.fintrack.common.exception.ErrorCode;
 import com.koi151.money.fintrack.core.user.UserService;
-import com.koi151.money.fintrack.core.user.payload.UserRegisterRequest;
 import com.koi151.money.fintrack.core.user.payload.UserResponse;
+import com.koi151.money.fintrack.core.user.payload.UserSyncRequest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -69,7 +69,7 @@ class AuthControllerTest {
             var request = buildRequest().build();
             var response = buildResponse().build();
 
-            given(userService.register(any(UserRegisterRequest.class)))
+            given(userService.register(any(UserSyncRequest.class)))
                 .willReturn(response);
 
             // When & Then
@@ -101,7 +101,7 @@ class AuthControllerTest {
             var request = buildRequest().build();
 
             // Dynamic mocking based on the passed error code
-            given(userService.register(any(UserRegisterRequest.class)))
+            given(userService.register(any(UserSyncRequest.class)))
                     .willThrow(new AppException(errorCode));
 
             // When & Then
@@ -122,7 +122,7 @@ class AuthControllerTest {
         @ParameterizedTest
         @DisplayName("Should return 400 when required fields are blank")
         @MethodSource("provideBlankFieldRequests")
-        void register_BlankFields_ReturnsBadRequest(UserRegisterRequest request, String fieldName) {
+        void register_BlankFields_ReturnsBadRequest(UserSyncRequest request, String fieldName) {
             webTestClient.post()
                 .uri(REGISTER_URL)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -139,7 +139,7 @@ class AuthControllerTest {
         @ParameterizedTest
         @DisplayName("Should return 400 when fields exceed max length")
         @MethodSource("provideExceedLengthRequests")
-        void register_ExceedLength_ReturnsBadRequest(UserRegisterRequest request, String fieldName) {
+        void register_ExceedLength_ReturnsBadRequest(UserSyncRequest request, String fieldName) {
             webTestClient.post()
                 .uri(REGISTER_URL)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -156,7 +156,7 @@ class AuthControllerTest {
         @ParameterizedTest
         @DisplayName("Should return 400 when fields are too short")
         @MethodSource("provideShortFieldRequests")
-        void register_ShortFields_ReturnsBadRequest(UserRegisterRequest request, String fieldName) {
+        void register_ShortFields_ReturnsBadRequest(UserSyncRequest request, String fieldName) {
             webTestClient.post()
                 .uri(REGISTER_URL)
                 .contentType(MediaType.APPLICATION_JSON)
@@ -257,27 +257,27 @@ class AuthControllerTest {
 
             return Stream.of(
                 Arguments.of(
-                    new UserRegisterRequest("", validEmail, validPassword),
+                    new UserSyncRequest("", validEmail, validPassword),
                     "username"
                 ),
                 Arguments.of(
-                    new UserRegisterRequest("   ", validEmail, validPassword),
+                    new UserSyncRequest("   ", validEmail, validPassword),
                     "username"
                 ),
                 Arguments.of(
-                    new UserRegisterRequest(validUsername, "", validPassword),
+                    new UserSyncRequest(validUsername, "", validPassword),
                     "email"
                 ),
                 Arguments.of(
-                    new UserRegisterRequest(validUsername, "   ", validPassword),
+                    new UserSyncRequest(validUsername, "   ", validPassword),
                     "email"
                 ),
                 Arguments.of(
-                    new UserRegisterRequest(validUsername, validEmail, ""),
+                    new UserSyncRequest(validUsername, validEmail, ""),
                     "password"
                 ),
                 Arguments.of(
-                    new UserRegisterRequest(validUsername, validEmail, "   "),
+                    new UserSyncRequest(validUsername, validEmail, "   "),
                     "password"
                 )
             );
@@ -295,19 +295,19 @@ class AuthControllerTest {
             return Stream.of(
                 // Username
                 Arguments.of(
-                    new UserRegisterRequest("a".repeat(51), validEmail, validPassword),
+                    new UserSyncRequest("a".repeat(51), validEmail, validPassword),
                     "username"
                 ),
 
                 // Email
                 Arguments.of(
-                    new UserRegisterRequest(validUsername, "a".repeat(90) + "@example.com", validPassword),
+                    new UserSyncRequest(validUsername, "a".repeat(90) + "@example.com", validPassword),
                     "email"
                 ),
 
                 // Password
                 Arguments.of(
-                    new UserRegisterRequest(validUsername, validEmail, "A".repeat(129)), // satisfied uppercase constraint
+                    new UserSyncRequest(validUsername, validEmail, "A".repeat(129)), // satisfied uppercase constraint
                     "password"
                 )
             );
@@ -325,13 +325,13 @@ class AuthControllerTest {
             return Stream.of(
                 // Username
                 Arguments.of(
-                    new UserRegisterRequest("ab", validEmail, validPassword),
+                    new UserSyncRequest("ab", validEmail, validPassword),
                     "username"
                 ),
 
                 // Password
                 Arguments.of(
-                    new UserRegisterRequest(validUsername, validEmail, "Pass1"),
+                    new UserSyncRequest(validUsername, validEmail, "Pass1"),
                     "password"
                 )
             );
@@ -340,8 +340,8 @@ class AuthControllerTest {
 
     // ================= Helper Methods =================
 
-    private UserRegisterRequest.UserRegisterRequestBuilder buildRequest() {
-        return UserRegisterRequest.builder()
+    private UserSyncRequest.UserRegisterRequestBuilder buildRequest() {
+        return UserSyncRequest.builder()
             .username(validUsername)
             .email(validEmail)
             .password(validPassword);

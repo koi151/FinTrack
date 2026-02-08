@@ -10,6 +10,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -33,6 +34,7 @@ public class TransactionController {
     @Operation(summary = "Get all transactions", description = "Retrieve a list of transactions. Can be filtered by User ID.")
     @ApiResponse(responseCode = "200", description = "Successfully retrieved list of transactions")
     @GetMapping
+    @PreAuthorize("hasRole('USER')")
     public AppResponse<List<TransactionResponse>> getTransactions() {
         return AppResponse.success(
             transactionService.getTransactions(),
@@ -44,6 +46,7 @@ public class TransactionController {
     @ApiResponse(responseCode = "200", description = "Successfully retrieved transaction")
     @ApiResponse(responseCode = "404", description = "Transaction not found", content = @Content)
     @GetMapping("/{id}")
+    @PreAuthorize("hasRole('USER')")
     public AppResponse<TransactionResponse> getTransaction(
         @Parameter(description = "The UUID of the transaction", example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
         @PathVariable UUID id)
@@ -59,6 +62,7 @@ public class TransactionController {
     @ApiResponse(responseCode = "400", description = "Invalid input or business logic violation", content = @Content)
     @ApiResponse(responseCode = "404", description = "Category or User not found", content = @Content)
     @PostMapping
+    @PreAuthorize("hasRole('USER')")
     public AppResponse<TransactionResponse> createTransaction(@RequestBody @Valid TransactionRequest request) {
         return AppResponse.success(
             transactionService.createTransaction(request),
@@ -71,6 +75,7 @@ public class TransactionController {
     @ApiResponse(responseCode = "400", description = "Invalid update data", content = @Content)
     @ApiResponse(responseCode = "404", description = "Transaction, Category, or User not found", content = @Content)
     @PutMapping("/{id}")
+    @PreAuthorize("hasRole('USER')")
     public AppResponse<TransactionResponse> updateTransaction(
         @Parameter(description = "The unique UUID of the transaction", example = "a0eebc99-9c0b-4ef8-bb6d-6bb9bd380a11")
         @PathVariable UUID id, @RequestBody @Valid TransactionRequest request)
@@ -85,6 +90,7 @@ public class TransactionController {
     @ApiResponse(responseCode = "200", description = "Transaction deleted successfully")
     @ApiResponse(responseCode = "404", description = "Transaction not found", content = @Content)
     @DeleteMapping("/{id}")
+    @PreAuthorize("hasRole('USER')")
     public AppResponse<TransactionResponse> deleteTransaction(
         @Parameter(description = "The UUID of the transaction to be deleted")
         @PathVariable UUID id)

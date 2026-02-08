@@ -1,36 +1,25 @@
 CREATE TABLE app_users (
-    id UUID PRIMARY KEY,
-    username VARCHAR(50) NOT NULL,
-    email VARCHAR(255) NOT NULL,
-    password VARCHAR(255), -- Nullable for OAuth users
-    avatar_url VARCHAR(500),
+   id UUID PRIMARY KEY,
+   username VARCHAR(50) NOT NULL,
+   email VARCHAR(255) NOT NULL,
+   full_name VARCHAR(255),
+   avatar_url VARCHAR(500),
+   role VARCHAR(20) NOT NULL DEFAULT 'USER',
 
-    -- Social Login Fields
-    provider VARCHAR(20) NOT NULL DEFAULT 'LOCAL',
-    provider_id VARCHAR(255),
+   -- Audit Fields
+   created_at TIMESTAMPTZ NOT NULL,
+   updated_at TIMESTAMPTZ,
+   created_by UUID,
+   updated_by UUID,
+   version BIGINT,
+   is_deleted BOOLEAN DEFAULT FALSE,
 
-    -- User Status
-    role VARCHAR(20) NOT NULL DEFAULT 'USER',
-    enabled BOOLEAN NOT NULL DEFAULT TRUE,
-    account_non_locked BOOLEAN NOT NULL DEFAULT TRUE,
-
-    -- Audit Fields
-    created_at TIMESTAMPTZ NOT NULL,
-    updated_at TIMESTAMPTZ,
-    created_by UUID,
-    updated_by UUID,
-    is_deleted BOOLEAN DEFAULT FALSE,
-    version BIGINT,
-
-    -- Unique Constraints
-    CONSTRAINT uk_user_username UNIQUE (username),
-    CONSTRAINT uk_user_email UNIQUE (email),
-    CONSTRAINT uk_user_provider_identity UNIQUE (provider, provider_id)
+   CONSTRAINT uk_user_username UNIQUE (username),
+   CONSTRAINT uk_user_email UNIQUE (email)
 );
 
 -- Indexes for app_users
 CREATE INDEX idx_users_email ON app_users (email);
-CREATE INDEX idx_users_provider ON app_users (provider, provider_id);
 
 
 CREATE TABLE categories (

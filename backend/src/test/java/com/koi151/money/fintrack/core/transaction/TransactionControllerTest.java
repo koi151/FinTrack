@@ -1,0 +1,368 @@
+package com.koi151.money.fintrack.core.transaction;
+
+import com.koi151.money.fintrack.common.AppResponse;
+import com.koi151.money.fintrack.common.exception.AppException;
+import com.koi151.money.fintrack.common.exception.ErrorCode;
+import com.koi151.money.fintrack.core.transaction.payload.TransactionRequest;
+import com.koi151.money.fintrack.core.transaction.payload.TransactionResponse;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
+
+import java.math.BigDecimal;
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+
+@WebMvcTest(TransactionController.class)
+@AutoConfigureMockMvc(addFilters = false)
+class TransactionControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private TransactionService transactionService;
+
+    private WebTestClient webTestClient;
+
+    private static final String BASE_URL = "/api/v1/transactions";
+    private static final BigDecimal DEFAULT_AMOUNT = BigDecimal.valueOf(199.99);
+
+    private UUID userId;
+    private UUID categoryId;
+    private UUID transactionId;
+    private Instant transactionDate;
+
+    @BeforeEach
+    void setUp() {
+        this.webTestClient = MockMvcWebTestClient.bindTo(mockMvc).build();
+        this.userId = UUID.randomUUID();
+        this.categoryId = UUID.randomUUID();
+        this.transactionId = UUID.randomUUID();
+        this.transactionDate = Instant.now();
+    }
+
+    @Nested
+    @DisplayName("GET " + BASE_URL)
+    class GetTransactionsTests {
+
+        @Test
+        @DisplayName("Should return list of transactions when records exist")
+        void getTransactions_RecordsExist_ReturnsSuccess() {
+            // Given
+            var response1 = buildResponse().id(UUID.randomUUID()).build();
+            var response2 = buildResponse().id(UUID.randomUUID()).build();
+            var transactionList = List.of(response1, response2);
+
+            given(transactionService.getTransactions())
+                .willReturn(transactionList);
+
+            // When & Then
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result").isArray()
+                .jsonPath("$.result.length()").isEqualTo(2)
+                .jsonPath("$.result[0].id").isEqualTo(response1.getId().toString())
+                .jsonPath("$.result[1].id").isEqualTo(response2.getId().toString());
+        }
+
+        @Test
+        @DisplayName("Should return empty list wrapper when no transactions are found")
+        void getTransactions_NoRecords_ReturnsEmptyArray() {
+            // Given
+            given(transactionService.getTransactions())
+                .willReturn(List.of());
+
+            // When & Then
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result").isArray()
+                .jsonPath("$.result").isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("GET " + BASE_URL + "/{id}")
+    class GetTransactionDetailTests {
+
+        @Test
+        @DisplayName("Should return 200 OK and detail when ID exists")
+        void getTransaction_IdExists_ReturnsSuccess() {
+            var response = buildResponse().id(transactionId).build();
+            given(transactionService.getTransaction(transactionId)).willReturn(response);
+
+            webTestClient.get()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result.id").isEqualTo(transactionId.toString());
+        }
+
+        @Test
+        @DisplayName("Should return 404 Not Found when ID does not exist")
+        void getTransaction_NotFound_Returns404() {
+            given(transactionService.getTransaction(transactionId))
+                .willThrow(new AppException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+            webTestClient.get()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.TRANSACTION_NOT_FOUND.getCode())
+                .jsonPath("$.message").isNotEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("POST " + BASE_URL)
+    class CreateTransactionTests {
+
+        @Test
+        @DisplayName("Should create transaction and return result when valid")
+        void createTransaction_ValidRequest_ReturnsSuccess() {
+            // Given
+            var request = buildRequest().build();
+            var response = buildResponse().build();
+
+            given(transactionService.createTransaction(any(TransactionRequest.class)))
+                    .willReturn(response);
+
+            // When & Then
+            webTestClient.post()
+                .uri(BASE_URL)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result.id").isEqualTo(transactionId)
+                .jsonPath("$.result.userId").isEqualTo(userId)
+                .jsonPath("$.result.amount").isEqualTo(DEFAULT_AMOUNT)
+                .jsonPath("$.result.transactionDate").isEqualTo(transactionDate);
+        }
+
+        @ParameterizedTest
+        @MethodSource("provideInvalidRequests")
+        @DisplayName("Should return 400 and list all field errors when request is invalid")
+        void createTransaction_InvalidRequests_Returns400(TransactionRequest invalidRequest, String[] expectedFields) {
+            var actions = webTestClient.post()
+                .uri(BASE_URL)
+                .bodyValue(invalidRequest)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+                .jsonPath("$.message").isEqualTo(ErrorCode.INVALID_PARAM.getMessage())
+
+                .jsonPath("$.result").isMap();
+
+            for (String field : expectedFields) { // check if message warning for each field exists
+                actions.jsonPath("$.result." + field).exists();
+            }
+        }
+
+        // Provider for single & multiple invalid field testing
+        private static Stream<Arguments> provideInvalidRequests() {
+            UUID uId = UUID.randomUUID();
+            UUID cId = UUID.randomUUID();
+            return Stream.of(
+                // Case 1: lack one field (categoryId)
+                Arguments.of(TransactionRequest.builder()
+                    .categoryId(cId)
+                    .userId(uId)
+                    .categoryId(null)
+                    .build(),
+                    new String[]{"categoryId"}),
+
+                // Case 2: lack multiple fields
+                Arguments.of(TransactionRequest.builder().build(),
+                    new String[]{"amount", "categoryId", "userId"})
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT " + BASE_URL + "/{id}")
+    class UpdateTransactionTests {
+
+        @Test
+        @DisplayName("Should update and return 200 OK when request is valid")
+        void updateTransaction_ValidRequest_ReturnsSuccess() {
+            // Given ------------------------
+            TransactionRequest request = buildRequest()
+                .note("Updated Note")
+                .build();
+
+            TransactionResponse response = buildResponse()
+                .note("Updated Note")
+                .build();
+
+            // mocking
+            given(transactionService.updateTransaction(eq(transactionId), any(TransactionRequest.class)))
+                .willReturn(response);
+
+            // When & Then ----------------
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result.id").isEqualTo(transactionId.toString())
+                .jsonPath("$.result.amount").isEqualTo(DEFAULT_AMOUNT)
+                .jsonPath("$.result.note").isEqualTo("Updated Note");
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request if body is invalid")
+        void updateTransaction_InvalidBody_Returns400() {
+            // Given: Request with negative amount
+            TransactionRequest invalidRequest = buildRequest()
+                .amount(BigDecimal.valueOf(-100))
+                .build();
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(invalidRequest)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+                .jsonPath("$.result.amount").isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("Should return 404 when Transaction ID does not exist")
+        void updateTransaction_NotFound_ReturnsErrorResponse() {
+            // Given
+            TransactionRequest request = buildRequest().build();
+
+            given(transactionService.updateTransaction(eq(transactionId), any()))
+                .willThrow(new AppException(ErrorCode.TRANSACTION_NOT_FOUND));
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isEqualTo(ErrorCode.TRANSACTION_NOT_FOUND.getHttpStatus())
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.TRANSACTION_NOT_FOUND.getCode())
+                .jsonPath("$.message").isNotEmpty();
+        }
+
+        @Test
+        @DisplayName("Should return error when Category does not exist")
+        void updateTransaction_CategoryNotFound_ReturnsErrorResponse() {
+            // Given
+            TransactionRequest request = buildRequest().build();
+
+            given(transactionService.updateTransaction(eq(transactionId), any()))
+                .willThrow(new AppException(ErrorCode.CATEGORY_NOT_FOUND));
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isEqualTo(ErrorCode.CATEGORY_NOT_FOUND.getHttpStatus())
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.CATEGORY_NOT_FOUND.getCode())
+                .jsonPath("$.message").isNotEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE " + BASE_URL + "/{id}")
+    class DeleteTransactionTests {
+
+        @Test
+        @DisplayName("Should delete and return custom 204 code in body")
+        void deleteTransaction_Exists_ReturnsSuccessWrapper() {
+            // Given
+            doNothing().when(transactionService).deleteTransaction(transactionId);
+
+            // When & Then
+            webTestClient.delete()
+                .uri(BASE_URL + "/{id}", transactionId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.message").exists()
+                .jsonPath("$.result").doesNotExist();
+        }
+    }
+
+    // ================= Helper Methods =================
+
+    private TransactionRequest.TransactionRequestBuilder buildRequest() {
+        return TransactionRequest.builder()
+            .amount(DEFAULT_AMOUNT)
+            .categoryId(categoryId)
+            .userId(userId)
+            .transactionDate(transactionDate)
+            .note("Grocery shopping");
+    }
+
+    private TransactionResponse.TransactionResponseBuilder buildResponse() {
+        return TransactionResponse.builder()
+            .id(transactionId)
+            .amount(DEFAULT_AMOUNT)
+            .categoryId(categoryId)
+            .userId(userId)
+            .transactionDate(transactionDate)
+            .note("Grocery shopping");
+    }
+}

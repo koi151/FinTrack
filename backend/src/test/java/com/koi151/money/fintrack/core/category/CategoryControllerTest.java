@@ -1,0 +1,366 @@
+package com.koi151.money.fintrack.core.category;
+
+import com.koi151.money.fintrack.common.AppResponse;
+import com.koi151.money.fintrack.common.exception.AppException;
+import com.koi151.money.fintrack.common.exception.ErrorCode;
+import com.koi151.money.fintrack.core.transaction.TransactionType;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.Arguments;
+import org.junit.jupiter.params.provider.MethodSource;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.client.MockMvcWebTestClient;
+
+import java.time.Instant;
+import java.util.UUID;
+import java.util.stream.Stream;
+
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.doNothing;
+
+@WebMvcTest(CategoryController.class)
+@AutoConfigureMockMvc(addFilters = false) // skip security filter, only test controller logic
+class CategoryControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private CategoryService categoryService;
+
+    private WebTestClient webTestClient; // assert JSON
+
+    private static final String BASE_URL = "/api/v1/categories";
+    private static final String DEFAULT_NAME = "Food & Dining";
+    private static final String DEFAULT_ICON = "food-icon";
+    private static final String DEFAULT_COLOR = "#FF5733";
+    private static final TransactionType DEFAULT_TYPE = TransactionType.EXPENSE;
+
+    private UUID userId;
+    private UUID categoryId;
+    private Instant fixedNow;
+
+    @BeforeEach
+    void setUp() {
+        this.webTestClient = MockMvcWebTestClient.bindTo(mockMvc).build();
+        this.userId = UUID.randomUUID();
+        this.categoryId = UUID.randomUUID();
+        this.fixedNow = Instant.parse("2025-01-01T10:00:00Z");
+    }
+
+    @Nested
+    @DisplayName("GET " + BASE_URL)
+    class GetCategoriesTests {
+
+        @Test
+        @DisplayName("Should return list of categories when categories exist")
+        void getCategories_Exist_ReturnsList() {
+            // Given
+            var response1 = buildResponse()
+                .id(UUID.randomUUID())
+                .name("Food")
+                .build();
+            var response2 = buildResponse()
+                .id(UUID.randomUUID())
+                .name("Salary")
+                .type(TransactionType.INCOME).build();
+
+            given(categoryService.getCategories()).willReturn(java.util.List.of(response1, response2));
+
+            // When & Then
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").isNotEmpty()
+
+                .jsonPath("$.result").isArray()
+                .jsonPath("$.result.length()").isEqualTo(2)
+                .jsonPath("$.result[0].name").isEqualTo("Food")
+                .jsonPath("$.result[1].name").isEqualTo("Salary");
+        }
+
+        @Test
+        @DisplayName("Should return empty list when no categories exist")
+        void getCategories_Empty_ReturnsEmptyList() {
+            given(categoryService.getCategories()).willReturn(java.util.List.of());
+
+            webTestClient.get()
+                .uri(BASE_URL)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.result").isEmpty();
+        }
+    }
+
+    @Nested
+    @DisplayName("POST " + BASE_URL)
+    class CreateCategoryTests {
+
+        @Test
+        @DisplayName("Should create category and return wrapped result when valid")
+        void createCategory_ValidRequest_ReturnsSuccess() {
+            // Given
+            var request = buildRequest().build();
+            var response = buildResponse().build();
+
+            given(categoryService.createCategory(any(CategoryRequest.class)))
+                .willReturn(response);
+
+            // When & Then
+            webTestClient.post()
+                .uri(BASE_URL)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                // Assert Envelope Structure
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").exists()
+
+                // Assert Payload
+                .jsonPath("$.result.id").isEqualTo(categoryId.toString())
+                .jsonPath("$.result.name").isEqualTo(DEFAULT_NAME)
+                .jsonPath("$.result.type").isEqualTo(DEFAULT_TYPE.name());
+        }
+
+        @Test
+        @DisplayName("Should return 400 and validation error map when request is invalid")
+        void createCategory_InvalidRequest_Returns400() {
+            // Given
+            var invalidRequest = buildRequest().name("").build();
+
+            // When & Then
+            webTestClient.post()
+                .uri(BASE_URL)
+                .bodyValue(invalidRequest)
+                .exchange()
+                .expectStatus().isBadRequest() // HTTP 400
+                .expectBody()
+
+                // Business code check
+                .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+
+                // message check
+                .jsonPath("$.message").isEqualTo(ErrorCode.INVALID_PARAM.getMessage())
+
+                .jsonPath("$.result").isMap()
+                .jsonPath("$.result.name").exists();
+        }
+
+        @ParameterizedTest
+        @MethodSource("provideInvalidCategoryRequests")
+        @DisplayName("Should return 400 and list specific field errors for CategoryRequest")
+        void createCategory_InvalidRequests_Returns400(CategoryRequest invalidRequest, String[] expectedFields) {
+            var actions = webTestClient.post()
+                    .uri(BASE_URL)
+                    .bodyValue(invalidRequest)
+                    .exchange()
+                    .expectStatus().isBadRequest()
+                    .expectBody()
+                    .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+                    .jsonPath("$.result").isMap();
+
+            for (String field : expectedFields) { // check if message warning for each field exists
+                actions.jsonPath("$.result." + field).exists();
+            }
+        }
+
+        // Provider for single & multiple invalid field testing
+        private static Stream<Arguments> provideInvalidCategoryRequests() {
+            UUID validUser = UUID.randomUUID();
+
+            return Stream.of(
+                // Case 1: empty name
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("")
+                        .userId(validUser)
+                        .type(TransactionType.EXPENSE)
+                        .build(),
+                    new String[]{"name"}
+                ),
+
+                // Case 2: wrong color code format
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("Food")
+                        .userId(validUser)
+                        .type(TransactionType.EXPENSE)
+                        .colorCode("ZZZ123")
+                        .build(),
+                    new String[]{"colorCode"}
+                ),
+
+                // Case 3: Multiple missing fields
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("Shopping")
+                        .userId(null)
+                        .type(null)
+                        .build(),
+                    new String[]{"userId", "type"}
+                ),
+
+                // Case 4: fields exceed max length
+                Arguments.of(
+                    CategoryRequest.builder()
+                        .name("a".repeat(101)) // Max 100
+                        .userId(validUser)
+                        .type(TransactionType.EXPENSE)
+                        .iconCode("b".repeat(51)) // Max 50
+                        .build(),
+                    new String[]{"name", "iconCode"}
+                )
+            );
+        }
+    }
+
+    @Nested
+    @DisplayName("PUT " + BASE_URL + "/{id}")
+    class UpdateCategoryTests {
+
+        @Test
+        @DisplayName("Should update and return 200 OK when request is valid")
+        void updateCategory_Valid_ReturnsSuccess() {
+            // Given
+            var request = buildRequest().name("Updated Name").build();
+            var response = buildResponse().name("Updated Name").build();
+
+            given(categoryService.updateCategory(any(UUID.class), any(CategoryRequest.class)))
+                    .willReturn(response);
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.message").exists()
+
+                .jsonPath("$.result.name").isEqualTo("Updated Name");
+        }
+
+        @Test
+        @DisplayName("Should return 400 Bad Request if validation fails")
+        void updateCategory_InvalidBody_Returns400() {
+            // Given
+            var invalidRequest = buildRequest().name("").build(); // triggers @NotBlank
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .bodyValue(invalidRequest)
+                .exchange()
+                .expectStatus().isBadRequest()
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.INVALID_PARAM.getCode())
+                .jsonPath("$.result.name").exists();
+        }
+
+        @Test
+        @DisplayName("Should return 409 Conflict if Service throws CATEGORY_EXISTED")
+        void updateCategory_BusinessException_ReturnsErrorResponse() {
+            // Given
+            var request = buildRequest().build();
+
+            // Mocking the Service to throw an exception (Simulating the Validator/Logic failure)
+            given(categoryService.updateCategory(any(), any()))
+                .willThrow(new AppException(ErrorCode.CATEGORY_EXISTED));
+
+            // When & Then
+            webTestClient.put()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .bodyValue(request)
+                .exchange()
+                .expectStatus().isEqualTo(ErrorCode.CATEGORY_EXISTED.getHttpStatus())
+                .expectBody()
+
+                .jsonPath("$.code").isEqualTo(ErrorCode.CATEGORY_EXISTED.getCode())
+                .jsonPath("$.message").exists();
+        }
+    }
+
+    @Nested
+    @DisplayName("GET " + BASE_URL + "/{id}")
+    class GetCategoryTests {
+
+        @Test
+        @DisplayName("Should return category detail inside result object")
+        void getCategory_Exists_Returns200() {
+            // Given
+            var response = buildResponse().build();
+            given(categoryService.getCategory(categoryId)).willReturn(response);
+
+            // When & Then
+            webTestClient.get()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.code").isEqualTo(AppResponse.SUCCESS_CODE)
+                .jsonPath("$.result.id").isEqualTo(categoryId.toString())
+                .jsonPath("$.result.name").isEqualTo(DEFAULT_NAME);
+        }
+    }
+
+    @Nested
+    @DisplayName("DELETE " + BASE_URL + "/{id}")
+    class DeleteCategoryTests {
+
+        @Test
+        @DisplayName("Should delete and return custom 204 code in body")
+        void deleteCategory_Exists_ReturnsSuccessWrapper() {
+            // Given
+            doNothing().when(categoryService).deleteCategory(categoryId);
+
+            // When & Then
+            webTestClient.delete()
+                .uri(BASE_URL + "/{id}", categoryId)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody()
+                .jsonPath("$.message").isNotEmpty()
+                .jsonPath("$.result").doesNotExist();
+        }
+    }
+
+    // --- Helpers ---
+
+    private CategoryRequest.CategoryRequestBuilder buildRequest() {
+        return CategoryRequest.builder()
+            .name(DEFAULT_NAME)
+            .userId(userId)
+            .type(DEFAULT_TYPE)
+            .iconCode(DEFAULT_ICON)
+            .colorCode(DEFAULT_COLOR);
+    }
+
+    private CategoryResponse.CategoryResponseBuilder buildResponse() {
+        return CategoryResponse.builder()
+            .id(categoryId)
+            .name(DEFAULT_NAME)
+            .type(DEFAULT_TYPE)
+            .iconCode(DEFAULT_ICON)
+            .colorCode(DEFAULT_COLOR)
+            .createdAt(fixedNow);
+    }
+}

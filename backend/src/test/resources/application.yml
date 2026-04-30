@@ -1,0 +1,28 @@
+spring:
+  application:
+    name: FinTrack-Test
+
+  datasource:
+    # Use H2 In-Memory Database for Unit/Integration Tests.
+    # MODE=PostgreSQL: Enables compatibility mode for Postgres-specific syntax.
+    # DB_CLOSE_DELAY=-1: Prevents H2 from closing the DB until the JVM exits.
+    url: jdbc:h2:mem:fintrack_test_db;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE;MODE=PostgreSQL
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    show-sql: true # Show SQL statements in the console for debugging
+    hibernate:
+      ddl-auto: create-drop
+    properties:
+      hibernate:
+        # Explicitly set H2 dialect so Hibernate generates H2-compatible SQL
+        dialect: org.hibernate.dialect.H2Dialect
+        format_sql: true
+
+  flyway:
+    # Disable Flyway for Unit Tests.
+    # Reason: We want speed. Letting Hibernate auto-generate the schema (create-drop)
+    # is faster than running all migration scripts for every test suite.
+    enabled: false

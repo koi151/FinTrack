@@ -1,0 +1,26 @@
+// Typography
+$font-family: 'Inter', system-ui, -apple-system, sans-serif;
+
+// Colors
+$primary-color: #10b981; // Green from screenshot
+$secondary-color: #64748b;
+$danger-color: #ef4444;
+
+// Backgrounds
+$bg-dark: #09090b;
+$bg-light: #fff;
+
+// Scrollbar
+$scrollbar-track: transparent;
+$scrollbar-thumb: #3f3f46;
+$scrollbar-thumb-hover: #52525b;
+
+// Breakpoints
+$mobile: 768px;
+$tablet: 1024px;
+$desktop: 1280px;
+
+// Spacing & Radius
+$radius-md: 10px;
+$radius-lg: 16px;
+$spacing-base: 1rem;

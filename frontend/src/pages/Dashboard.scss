@@ -1,0 +1,42 @@
+@use '../styles/variables' as *; 
+
+// --- Shared Utilities ---
+.shadow-sm {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  border-radius: $radius-md;
+}
+
+// --- Main Content Layout ---
+.dashboard-content {
+  padding: $spacing-base * 2;
+  width: 100%;
+  
+  // Add extra padding at the bottom on mobile so content isn't hidden behind the nav bar
+  &.mobile-padding {
+    padding-bottom: 100px;
+    padding-left: $spacing-base;
+    padding-right: $spacing-base;
+  }
+}
+
+// --- Header Styles ---
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-bottom: $spacing-base * 1.5;
+}
+
+// --- Responsive: Mobile Header ---
+@media (max-width: $mobile) {
+  .header-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-base;
+    
+    .ant-space, button {
+      width: 100%;
+      justify-content: flex-end;
+    }
+  }
+}

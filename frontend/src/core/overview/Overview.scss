@@ -1,0 +1,171 @@
+@use '../../styles/variables' as *;
+
+.overview-container {
+  width: 100%;
+  
+  // ========================================================================
+  // 1. STATS CARDS
+  // ========================================================================
+  .stat-card {
+    height: 100%; // Forces card to fill the grid column height
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+
+    .ant-card-body {
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      height: 100%;
+    }
+
+    // The percentage badge (e.g., +12%)
+    .stat-badge {
+      font-size: 14px;
+      margin-left: 8px;
+      font-weight: 500;
+      
+      &.positive { color: #52c41a; }
+      &.negative { color: #ff4d4f; }
+    }
+
+    // Subtext at bottom of card
+    .stat-footer {
+      margin-top: 12px;
+      font-size: 0.85rem;
+      color: #8c8c8c; // AntD secondary text color
+    }
+
+    // Custom CSS Progress Bar (for Monthly Expense card)
+    .progress-bar-bg {
+      height: 6px;
+      width: 100%;
+      background: #f0f0f0; // Light gray track
+      border-radius: 10px;
+      margin-top: 16px;
+      margin-bottom: 4px;
+      overflow: hidden;
+      
+      .progress-bar-fill {
+        height: 100%;
+        background: #ff4d4f; // Red fill
+        border-radius: 10px;
+        transition: width 0.3s ease;
+      }
+    }
+  }
+
+  // ========================================================================
+  // 2. CHART CARDS (Area & Pie)
+  // ========================================================================
+  .chart-card {
+    height: 100%;
+    
+    // Header containing Title and Time Filter (Week/Month/Year)
+    .chart-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap;
+
+      @media (max-width: $mobile) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+        
+        .ant-segmented {
+          width: 100%; // Full width filter on mobile
+        }
+      }
+    }
+
+    // Center text overlay for the Donut Chart
+    .donut-center-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -65%); // Shift slightly up to center visually above legend
+      text-align: center;
+      pointer-events: none; // Allows clicks to pass through to the pie slices
+      
+      h4 {
+        color: inherit;
+      }
+    }
+  }
+
+  // ========================================================================
+  // 3. CUSTOM CHART TOOLTIP (Dark / Glassmorphism)
+  // ========================================================================
+  .custom-tooltip {
+    background: rgba(30, 30, 30, 0.85); // Dark semi-transparent background
+    backdrop-filter: blur(12px);         // Blur effect (Glassmorphism)
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 8px;
+    padding: 12px 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
+    min-width: 160px;
+    pointer-events: none; // Prevent tooltip from catching mouse events
+
+    // Tooltip Date Label
+    .label {
+      margin: 0 0 10px 0;
+      font-weight: 600;
+      color: #e0e0e0;
+      font-size: 0.9rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      padding-bottom: 6px;
+    }
+
+    // Individual Items (Income / Expense rows)
+    .tooltip-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 0.85rem;
+
+      &:last-child {
+        margin-bottom: 0;
+      }
+
+      // Colored dot indicator
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+      }
+
+      .name {
+        color: #a0a0a0;
+        margin-right: auto;
+      }
+
+      .value {
+        font-weight: 600;
+        margin-left: 12px;
+        font-family: monospace; // Better alignment for numbers
+        font-size: 0.95rem;
+      }
+    }
+  }
+
+  // ========================================================================
+  // 4. RESPONSIVE TWEAKS
+  // ========================================================================
+  @media (max-width: $mobile) {
+    // Reduce padding on mobile for tighter layout
+    .stat-card .ant-card-body, 
+    .chart-card .ant-card-body {
+      padding: 16px;
+    }
+
+    // Adjust font size for big numbers
+    .ant-statistic-content-value {
+      font-size: 1.5rem !important; 
+    }
+  }
+}

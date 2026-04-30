@@ -1,0 +1,216 @@
+// --- Variables ---
+$color-green-primary: #10b981;
+$color-green-dark: #0f766e;
+$color-bg-dark: #0a0a0a;       // Deep black background for right side
+$color-card-bg: #161616;       // Slightly lighter black for the card
+$color-text-white: #ffffff;
+$color-text-muted: #a1a1aa;
+$color-border: #27272a;
+
+// --- Inheritance Placeholders ---
+%flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+%text-base {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  letter-spacing: -0.01em;
+}
+
+%btn-base {
+  height: 48px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 15px;
+  border: none;
+  transition: all 0.2s ease;
+  
+  &:hover {
+    transform: translateY(-1px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// --- Main Styles ---
+.login-container {
+  display: flex;
+  min-height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+
+  // LEFT SIDE (Green)
+  .login-brand-section {
+    @extend %flex-center;
+    flex: 1;
+    position: relative;
+    background: linear-gradient(135deg, $color-green-dark 0%, $color-green-primary 100%);
+    flex-direction: column;
+    padding: 3rem;
+    color: $color-text-white;
+
+    .brand-content {
+      z-index: 10;
+      text-align: center;
+      max-width: 480px;
+
+      .brand-title {
+        @extend %text-base;
+        color: $color-text-white;
+        font-size: 3.5rem;
+        font-weight: 800;
+        margin-bottom: 1rem;
+      }
+
+      .brand-subtitle {
+        @extend %text-base;
+        color: rgba(255, 255, 255, 0.9);
+        font-size: 1.1rem;
+        line-height: 1.6;
+      }
+    }
+
+    // Abstract Shapes
+    .shape-circle {
+      position: absolute;
+      border-radius: 50%;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(40px);
+    }
+    .shape-top { width: 400px; height: 400px; top: -120px; left: -120px; }
+    .shape-bottom { width: 300px; height: 300px; bottom: -60px; right: -60px; }
+  }
+
+  // RIGHT SIDE (Dark Form)
+  .login-form-section {
+    @extend %flex-center;
+    flex: 1;
+    background-color: $color-bg-dark;
+    padding: 2rem;
+
+    .login-card {
+      width: 100%;
+      max-width: 400px;
+      background-color: $color-card-bg;
+      border: 1px solid $color-border;
+      border-radius: 16px;
+      padding: 2.5rem;
+      box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+
+      // Card Header
+      .card-header {
+        text-align: center;
+        margin-bottom: 2rem;
+
+        .card-title {
+          @extend %text-base;
+          color: $color-text-white;
+          font-weight: 700;
+          margin-bottom: 0.5rem;
+        }
+
+        .card-subtitle {
+          @extend %text-base;
+          color: $color-text-muted;
+          font-size: 0.95rem;
+        }
+      }
+
+      // Card Body
+      .card-body {
+        .btn {
+          @extend %btn-base;
+          
+          &.btn-primary {
+            background-color: $color-green-primary;
+            color: #fff;
+            box-shadow: 0 4px 12px rgba($color-green-primary, 0.25);
+            
+            &:hover {
+              background-color: lighten($color-green-primary, 5%);
+            }
+          }
+
+          &.btn-secondary {
+            background-color: $color-text-white;
+            color: #18181b;
+            border: 1px solid #e4e4e7;
+            
+            &:hover {
+              background-color: #f4f4f5;
+            }
+          }
+        }
+
+        // OR Divider
+        .divider {
+          @extend %flex-center;
+          margin: 1.5rem 0;
+          
+          .divider-line {
+            flex: 1;
+            height: 1px;
+            background-color: $color-border;
+          }
+
+          .divider-text {
+            padding: 0 12px;
+            color: #52525b;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+          }
+        }
+      }
+
+      // Card Footer
+      .card-footer {
+        margin-top: 2rem;
+        text-align: center;
+        
+        .footer-text {
+          @extend %text-base;
+          color: #52525b;
+        }
+
+        .footer-link {
+          @extend %text-base;
+          color: $color-green-primary;
+          font-weight: 600;
+          cursor: pointer;
+          margin-left: 6px;
+          transition: color 0.2s;
+
+          &:hover {
+            color: lighten($color-green-primary, 10%);
+            text-decoration: underline;
+          }
+        }
+      }
+    }
+  }
+}
+
+// Mobile Responsive
+@media (max-width: 900px) {
+  .login-container {
+    flex-direction: column;
+
+    .login-brand-section {
+      min-height: 220px;
+      padding: 2rem;
+      
+      .brand-title { font-size: 2.5rem !important; }
+      .brand-subtitle { display: none; }
+      .shape-circle { display: none; }
+    }
+
+    .login-form-section {
+      flex: 2;
+    }
+  }
+}
